@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, AtSign, Mail, Phone, Globe, Building2, Archive } from 'lucide-react'
+import { ChevronLeft, AtSign, Mail, Phone, Globe, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -11,8 +11,9 @@ import { ContactTags } from '@/components/contacts/contact-tags'
 import { ContactTimeline } from '@/components/contacts/contact-timeline'
 import { DiscoveryNotes } from '@/components/contacts/discovery-notes'
 import { AiPanel } from '@/components/contacts/ai-panel'
-import { updateContact, archiveContact } from '@/app/(app)/contacts/actions'
+import { updateContact, deleteContact } from '@/app/(app)/contacts/actions'
 import type { ContactActionState } from '@/app/(app)/contacts/actions'
+import { DeleteContactButton } from '@/components/contacts/delete-contact-button'
 import {
   SOURCE_LABELS, LEAD_TYPE_LABELS, FUNNEL_DESTINATION_LABELS,
   COMMUNITY_STATUS_LABELS, CONTENT_PILLAR_LABELS
@@ -93,11 +94,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        <form action={archiveContact.bind(null, id)}>
-          <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground gap-1.5 shrink-0">
-            <Archive className="w-4 h-4" /> Arquivar
-          </Button>
-        </form>
+        <DeleteContactButton deleteAction={async () => { 'use server'; await deleteContact(id) }} />
       </div>
 
       <ContactTags contactId={id} tags={tags} />

@@ -61,14 +61,14 @@ export async function updateContact(id: string, prevState: ContactActionState, f
   return { success: true }
 }
 
-export async function archiveContact(id: string) {
+export async function deleteContact(id: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   await supabase
     .from('contacts')
-    .update({ status: 'archived', updated_at: new Date().toISOString() })
+    .delete()
     .eq('id', id)
     .eq('owner_id', user.id)
 
