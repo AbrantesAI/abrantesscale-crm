@@ -20,7 +20,7 @@ export function Sidebar() {
   return (
     <>
       {/* Sidebar — só visível em desktop */}
-      <aside className="hidden lg:flex flex-col w-56 min-h-screen bg-sidebar border-r border-sidebar-border shrink-0">
+      <aside className="desktop-only flex flex-col w-56 min-h-screen bg-sidebar border-r border-sidebar-border shrink-0">
         <div className="flex items-center gap-2 px-4 h-14 border-b border-sidebar-border">
           <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary">
             <Zap className="w-4 h-4 text-primary-foreground" />
@@ -65,7 +65,7 @@ export function Sidebar() {
       </aside>
 
       {/* Barra de navegação inferior — só visível em mobile */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border flex items-center justify-around px-2 h-16">
+      <nav className="mobile-only fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border flex items-center justify-around px-2 h-16">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
           return (
