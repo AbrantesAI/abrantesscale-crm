@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useCallback } from 'react'
 import {
-  DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
+  DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors,
   type DragStartEvent, type DragEndEvent,
 } from '@dnd-kit/core'
 import { KanbanColumn } from './kanban-column'
@@ -24,7 +24,8 @@ export function KanbanBoard({ stages, contacts }: Props) {
   const [, startTransition] = useTransition()
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
   )
 
   const filteredStages = stages.filter((s) => s.track === track)
