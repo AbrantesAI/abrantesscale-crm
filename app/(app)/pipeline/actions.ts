@@ -25,3 +25,18 @@ export async function moveContact(contactId: string, newStageId: string, oldStag
   revalidatePath('/pipeline')
   revalidatePath(`/contacts/${contactId}`)
 }
+
+export async function updateDealValue(contactId: string, dealValue: number | null) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  await supabase
+    .from('contacts')
+    .update({ deal_value: dealValue, updated_at: new Date().toISOString() })
+    .eq('id', contactId)
+    .eq('owner_id', user.id)
+
+  revalidatePath('/pipeline')
+  revalidatePath(`/contacts/${contactId}`)
+}

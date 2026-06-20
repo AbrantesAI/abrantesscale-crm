@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useTransition, useCallback, useMemo } from 'react'
+import { useState, useTransition, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { AtSign, Euro, ChevronDown, ChevronLeft, ChevronRight, ArrowDown } from 'lucide-react'
-import { moveContact } from '@/app/(app)/pipeline/actions'
+import { moveContact, updateDealValue } from '@/app/(app)/pipeline/actions'
 import { LEAD_TYPE_LABELS } from '@/lib/validations/contact'
 import { cn } from '@/lib/utils'
 import type { PipelineStage, Contact } from '@/lib/types/database.types'
@@ -234,6 +234,37 @@ function FunnelContactRow({
   const prevStage = idx > 0 ? stages[idx - 1] : null
   const nextStage = idx < stages.length - 1 ? stages[idx + 1] : null
 
+  const [editingValue, setEditingValue] = useState(false)
+  const [localValue, setLocalValue] = useState(contact.deal_value?.toString() ?? '')
+  const [displayValue, setDisplayValue] = useState(contact.deal_value)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [, startSave] = useTransition()
+
+  function openEdit(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    setLocalValue(displayValue?.toString() ?? '')
+    setEditingValue(true)
+    setTimeout(() => inputRef.current?.select(), 0)
+  }
+
+  function saveValue(e?: React.MouseEvent) {
+    e?.preventDefault()
+    e?.stopPropagation()
+    const num = localValue === '' ? null : parseFloat(localValue.replace(',', '.'))
+    const final = num === null || isNaN(num) ? null : num
+    setDisplayValue(final)
+    setEditingValue(false)
+    startSave(async () => {
+      await updateDealValue(contact.id, final)
+    })
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') saveValue()
+    if (e.key === 'Escape') setEditingValue(false)
+  }
+
   return (
     <div className="bg-background border rounded-lg p-2.5 flex items-center gap-2.5 shadow-sm">
       <span
@@ -254,11 +285,36 @@ function FunnelContactRow({
               <span className="truncate">{contact.instagram.replace('@', '')}</span>
             </span>
           )}
-          {(contact.deal_value ?? 0) > 0 && (
-            <span className="flex items-center gap-0.5 text-xs font-medium text-emerald-500 shrink-0">
+
+          {/* Valor do ticket — clica para editar */}
+          {editingValue ? (
+            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+              <Euro className="w-3 h-3 text-emerald-500 shrink-0" />
+              <input
+                ref={inputRef}
+                type="number"
+                min="0"
+                step="1"
+                value={localValue}
+                onChange={(e) => setLocalValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={() => saveValue()}
+                className="w-20 text-xs bg-muted border border-primary rounded px-1.5 py-0.5 outline-none text-foreground"
+                placeholder="0"
+              />
+            </div>
+          ) : (
+            <button
+              onClick={openEdit}
+              className={cn(
+                'flex items-center gap-0.5 text-xs font-medium rounded px-1 py-0.5 -ml-1 transition-colors hover:bg-muted',
+                (displayValue ?? 0) > 0 ? 'text-emerald-500' : 'text-muted-foreground/60'
+              )}
+              title="Clica para editar o valor"
+            >
               <Euro className="w-3 h-3" />
-              {contact.deal_value!.toLocaleString('pt-PT')}
-            </span>
+              {(displayValue ?? 0) > 0 ? displayValue!.toLocaleString('pt-PT') : 'Adicionar valor'}
+            </button>
           )}
         </div>
       </div>
