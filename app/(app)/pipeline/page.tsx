@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { KanbanBoard } from '@/components/pipeline/kanban-board'
+import { PipelineFunnel } from '@/components/pipeline/pipeline-funnel'
 import { NewContactDialog } from '@/components/contacts/new-contact-dialog'
 
 export default async function PipelinePage() {
@@ -28,7 +28,7 @@ export default async function PipelinePage() {
         <h1 className="text-xl font-bold">Pipeline</h1>
         <NewContactDialog stages={stages ?? []} />
       </div>
-      <KanbanBoard stages={stages ?? []} contacts={contacts ?? []} />
+      <PipelineFunnel stages={stages ?? []} contacts={contacts ?? []} />
     </div>
   )
 }
