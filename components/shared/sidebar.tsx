@@ -22,7 +22,7 @@ export function Sidebar() {
       {/* Sidebar — só visível em desktop */}
       <aside className="desktop-only flex flex-col w-56 min-h-screen bg-sidebar border-r border-sidebar-border shrink-0">
         <div className="flex items-center gap-2.5 px-4 h-14 border-b border-sidebar-border">
-          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary shadow-[0_0_12px_oklch(0.627_0.265_293/50%)]">
+          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary shadow-[0_0_12px_oklch(0.65_0.22_245/50%)]">
             <svg viewBox="0 0 22 22" fill="currentColor" className="w-4 h-4 text-primary-foreground">
               {/* Barras ascendentes */}
               <rect x="0.5" y="14" width="4.5" height="7.5" rx="0.4"/>

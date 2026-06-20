@@ -56,47 +56,47 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ─── Tema AbrantesScale: dark purple ─── */
+/* ─── Tema AbrantesScale: dark navy + Scalit blue ─── */
 :root {
-  /* Backgrounds */
-  --background: oklch(0.08 0.025 285);
-  --foreground: oklch(0.94 0.012 285);
+  /* Backgrounds — navy escuro como no logo Scalit */
+  --background: oklch(0.08 0.025 240);
+  --foreground: oklch(0.94 0.012 240);
 
   /* Cards */
-  --card: oklch(0.13 0.028 285);
-  --card-foreground: oklch(0.94 0.012 285);
+  --card: oklch(0.13 0.028 240);
+  --card-foreground: oklch(0.94 0.012 240);
 
   /* Popover */
-  --popover: oklch(0.13 0.028 285);
-  --popover-foreground: oklch(0.94 0.012 285);
+  --popover: oklch(0.13 0.028 240);
+  --popover-foreground: oklch(0.94 0.012 240);
 
-  /* Primary — roxo vivo */
-  --primary: oklch(0.627 0.265 293);
+  /* Primary — azul elétrico Scalit */
+  --primary: oklch(0.65 0.22 245);
   --primary-foreground: oklch(0.98 0 0);
 
   /* Secondary */
-  --secondary: oklch(0.19 0.04 285);
-  --secondary-foreground: oklch(0.85 0.02 285);
+  --secondary: oklch(0.19 0.04 240);
+  --secondary-foreground: oklch(0.85 0.02 240);
 
   /* Muted */
-  --muted: oklch(0.17 0.028 285);
-  --muted-foreground: oklch(0.57 0.04 285);
+  --muted: oklch(0.17 0.028 240);
+  --muted-foreground: oklch(0.57 0.04 240);
 
   /* Accent */
-  --accent: oklch(0.22 0.055 295);
-  --accent-foreground: oklch(0.9 0.02 295);
+  --accent: oklch(0.22 0.055 245);
+  --accent-foreground: oklch(0.9 0.02 245);
 
   /* Destructive */
   --destructive: oklch(0.65 0.23 25);
 
   /* Borders & inputs */
-  --border: oklch(0.28 0.05 285 / 45%);
-  --input: oklch(0.19 0.032 285);
-  --ring: oklch(0.627 0.265 293 / 55%);
+  --border: oklch(0.28 0.05 240 / 45%);
+  --input: oklch(0.19 0.032 240);
+  --ring: oklch(0.65 0.22 245 / 55%);
 
   /* Charts */
-  --chart-1: oklch(0.627 0.265 293);
-  --chart-2: oklch(0.65 0.2 240);
+  --chart-1: oklch(0.65 0.22 245);
+  --chart-2: oklch(0.7 0.18 200);
   --chart-3: oklch(0.7 0.2 340);
   --chart-4: oklch(0.7 0.18 160);
   --chart-5: oklch(0.75 0.18 65);
@@ -104,49 +104,49 @@
   --radius: 0.75rem;
 
   /* Sidebar */
-  --sidebar: oklch(0.095 0.025 285);
-  --sidebar-foreground: oklch(0.75 0.03 285);
-  --sidebar-primary: oklch(0.627 0.265 293);
+  --sidebar: oklch(0.095 0.025 240);
+  --sidebar-foreground: oklch(0.75 0.03 240);
+  --sidebar-primary: oklch(0.65 0.22 245);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.2 0.055 295);
-  --sidebar-accent-foreground: oklch(0.9 0.02 295);
-  --sidebar-border: oklch(0.22 0.04 285 / 50%);
-  --sidebar-ring: oklch(0.627 0.265 293 / 50%);
+  --sidebar-accent: oklch(0.2 0.055 245);
+  --sidebar-accent-foreground: oklch(0.9 0.02 245);
+  --sidebar-border: oklch(0.22 0.04 240 / 50%);
+  --sidebar-ring: oklch(0.65 0.22 245 / 50%);
 }
 
 /* Forçar tema escuro mesmo sem classe .dark */
 .dark {
-  --background: oklch(0.08 0.025 285);
-  --foreground: oklch(0.94 0.012 285);
-  --card: oklch(0.13 0.028 285);
-  --card-foreground: oklch(0.94 0.012 285);
-  --popover: oklch(0.13 0.028 285);
-  --popover-foreground: oklch(0.94 0.012 285);
-  --primary: oklch(0.627 0.265 293);
+  --background: oklch(0.08 0.025 240);
+  --foreground: oklch(0.94 0.012 240);
+  --card: oklch(0.13 0.028 240);
+  --card-foreground: oklch(0.94 0.012 240);
+  --popover: oklch(0.13 0.028 240);
+  --popover-foreground: oklch(0.94 0.012 240);
+  --primary: oklch(0.65 0.22 245);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.19 0.04 285);
-  --secondary-foreground: oklch(0.85 0.02 285);
-  --muted: oklch(0.17 0.028 285);
-  --muted-foreground: oklch(0.57 0.04 285);
-  --accent: oklch(0.22 0.055 295);
-  --accent-foreground: oklch(0.9 0.02 295);
+  --secondary: oklch(0.19 0.04 240);
+  --secondary-foreground: oklch(0.85 0.02 240);
+  --muted: oklch(0.17 0.028 240);
+  --muted-foreground: oklch(0.57 0.04 240);
+  --accent: oklch(0.22 0.055 245);
+  --accent-foreground: oklch(0.9 0.02 245);
   --destructive: oklch(0.65 0.23 25);
-  --border: oklch(0.28 0.05 285 / 45%);
-  --input: oklch(0.19 0.032 285);
-  --ring: oklch(0.627 0.265 293 / 55%);
-  --chart-1: oklch(0.627 0.265 293);
-  --chart-2: oklch(0.65 0.2 240);
+  --border: oklch(0.28 0.05 240 / 45%);
+  --input: oklch(0.19 0.032 240);
+  --ring: oklch(0.65 0.22 245 / 55%);
+  --chart-1: oklch(0.65 0.22 245);
+  --chart-2: oklch(0.7 0.18 200);
   --chart-3: oklch(0.7 0.2 340);
   --chart-4: oklch(0.7 0.18 160);
   --chart-5: oklch(0.75 0.18 65);
-  --sidebar: oklch(0.095 0.025 285);
-  --sidebar-foreground: oklch(0.75 0.03 285);
-  --sidebar-primary: oklch(0.627 0.265 293);
+  --sidebar: oklch(0.095 0.025 240);
+  --sidebar-foreground: oklch(0.75 0.03 240);
+  --sidebar-primary: oklch(0.65 0.22 245);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.2 0.055 295);
-  --sidebar-accent-foreground: oklch(0.9 0.02 295);
-  --sidebar-border: oklch(0.22 0.04 285 / 50%);
-  --sidebar-ring: oklch(0.627 0.265 293 / 50%);
+  --sidebar-accent: oklch(0.2 0.055 245);
+  --sidebar-accent-foreground: oklch(0.9 0.02 245);
+  --sidebar-border: oklch(0.22 0.04 240 / 50%);
+  --sidebar-ring: oklch(0.65 0.22 245 / 50%);
 }
 
 @layer base {
@@ -161,7 +161,7 @@
   }
 }
 
-/* ─── Glow ambiente roxo no fundo ─── */
+/* ─── Glow ambiente azul Scalit no fundo ─── */
 body::before {
   content: '';
   position: fixed;
@@ -172,7 +172,7 @@ body::before {
   height: 55%;
   background: radial-gradient(
     ellipse 80% 60% at 50% -10%,
-    oklch(0.627 0.265 293 / 12%),
+    oklch(0.65 0.22 245 / 12%),
     transparent 70%
   );
   pointer-events: none;
@@ -204,5 +204,5 @@ body > * {
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.627 0.265 293 / 50%);
+  background: oklch(0.65 0.22 245 / 50%);
 }
