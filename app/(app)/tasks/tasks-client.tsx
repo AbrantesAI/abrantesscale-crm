@@ -4,17 +4,24 @@ import { useState, useTransition, useMemo } from 'react'
 import Link from 'next/link'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toggleTask } from '@/app/(app)/contacts/[id]/actions'
+import { createTask } from '@/app/(app)/tasks/actions'
 import type { Task } from '@/lib/types/database.types'
 import { format, isPast, isToday, isTomorrow, isThisWeek } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
-import { AlertCircle, User } from 'lucide-react'
+import { AlertCircle, User, Plus } from 'lucide-react'
 
 type TaskWithContact = Task & { contacts: { id: string; full_name: string } | null }
+type ContactOption = { id: string; full_name: string }
 
 type Props = {
   tasks: TaskWithContact[]
+  contacts: ContactOption[]
 }
 
 function groupTasks(tasks: TaskWithContact[]) {
@@ -40,12 +47,30 @@ function groupTasks(tasks: TaskWithContact[]) {
   return { overdue, today, tomorrow, thisWeek, later, noDue, done }
 }
 
-export function TasksClient({ tasks }: Props) {
+export function TasksClient({ tasks, contacts }: Props) {
   const [localDone, setLocalDone] = useState<Set<string>>(
     new Set(tasks.filter((t) => t.is_done).map((t) => t.id))
   )
   const [showDone, setShowDone] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [newDue, setNewDue] = useState('')
+  const [newContact, setNewContact] = useState('none')
+  const [creating, startCreate] = useTransition()
   const [, startTransition] = useTransition()
+
+  function handleCreate() {
+    if (!newTitle.trim()) return
+    startCreate(async () => {
+      const result = await createTask(newTitle, newDue || null, newContact === 'none' ? null : newContact)
+      if ('success' in result) {
+        setNewTitle('')
+        setNewDue('')
+        setNewContact('none')
+        setDialogOpen(false)
+      }
+    })
+  }
 
   function handleToggle(task: TaskWithContact, checked: boolean) {
     setLocalDone((prev) => {
@@ -83,6 +108,65 @@ export function TasksClient({ tasks }: Props) {
 
   return (
     <div className="space-y-5">
+      {/* Cabeçalho com botão */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">Tarefas</h1>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger render={<Button size="sm" className="gap-1.5" />}>
+            <Plus className="w-4 h-4" />
+            Nova tarefa
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Nova tarefa</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Título</label>
+                <Input
+                  placeholder="Ex: Enviar proposta..."
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Data limite <span className="text-muted-foreground font-normal">(opcional)</span></label>
+                <Input
+                  type="date"
+                  value={newDue}
+                  onChange={(e) => setNewDue(e.target.value)}
+                />
+              </div>
+              {contacts.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Contacto <span className="text-muted-foreground font-normal">(opcional)</span></label>
+                  <Select value={newContact} onValueChange={(v) => setNewContact(v ?? 'none')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sem contacto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem contacto</SelectItem>
+                      {contacts.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <Button
+                className="w-full"
+                onClick={handleCreate}
+                disabled={!newTitle.trim() || creating}
+              >
+                {creating ? 'A criar...' : 'Criar tarefa'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
       {/* Resumo */}
       <div className="grid grid-cols-3 gap-3">
         <StatCard
