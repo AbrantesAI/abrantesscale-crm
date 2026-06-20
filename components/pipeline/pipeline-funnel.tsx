@@ -272,19 +272,13 @@ function FunnelContactRow({
         title={LEAD_TYPE_LABELS[contact.lead_type]}
       />
       <div className="flex-1 min-w-0">
-        <Link
-          href={`/contacts/${contact.id}`}
-          className="font-medium text-sm leading-tight hover:underline truncate block"
-        >
-          {contact.full_name}
-        </Link>
-        <div className="flex items-center gap-3 mt-0.5">
-          {contact.instagram && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
-              <AtSign className="w-3 h-3 shrink-0" />
-              <span className="truncate">{contact.instagram.replace('@', '')}</span>
-            </span>
-          )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href={`/contacts/${contact.id}`}
+            className="font-medium text-sm leading-tight hover:underline truncate"
+          >
+            {contact.full_name}
+          </Link>
 
           {/* Valor do ticket — clica para editar */}
           {editingValue ? (
@@ -299,7 +293,7 @@ function FunnelContactRow({
                 onChange={(e) => setLocalValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={() => saveValue()}
-                className="w-20 text-xs bg-muted border border-primary rounded px-1.5 py-0.5 outline-none text-foreground"
+                className="w-24 text-sm bg-muted border border-primary rounded-md px-2 py-0.5 outline-none text-foreground"
                 placeholder="0"
               />
             </div>
@@ -307,16 +301,24 @@ function FunnelContactRow({
             <button
               onClick={openEdit}
               className={cn(
-                'flex items-center gap-0.5 text-xs font-medium rounded px-1 py-0.5 -ml-1 transition-colors hover:bg-muted',
-                (displayValue ?? 0) > 0 ? 'text-emerald-500' : 'text-muted-foreground/60'
+                'flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors shrink-0',
+                (displayValue ?? 0) > 0
+                  ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20'
+                  : 'text-muted-foreground border-dashed border-border hover:border-primary/50 hover:text-primary'
               )}
-              title="Clica para editar o valor"
             >
               <Euro className="w-3 h-3" />
-              {(displayValue ?? 0) > 0 ? displayValue!.toLocaleString('pt-PT') : 'Adicionar valor'}
+              {(displayValue ?? 0) > 0 ? displayValue!.toLocaleString('pt-PT') + ' €' : '+ valor'}
             </button>
           )}
         </div>
+
+        {contact.instagram && (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 min-w-0">
+            <AtSign className="w-3 h-3 shrink-0" />
+            <span className="truncate">{contact.instagram.replace('@', '')}</span>
+          </span>
+        )}
       </div>
 
       {/* Navegação entre etapas */}
