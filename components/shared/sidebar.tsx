@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Kanban, CheckSquare, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, LogOut } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ const navItems = [
   { href: '/contacts', label: 'Contactos', icon: Users },
   { href: '/pipeline', label: 'Pipeline', icon: Kanban },
   { href: '/tasks', label: 'Tarefas', icon: CheckSquare },
+  { href: '/settings', label: 'Definições', icon: Settings },
 ]
 
 export function Sidebar() {
