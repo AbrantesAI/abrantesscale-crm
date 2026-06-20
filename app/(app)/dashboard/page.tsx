@@ -22,6 +22,7 @@ export default async function DashboardPage() {
     { data: recentActivities },
     { data: pendingTasks },
     { data: stages },
+    { data: goals },
   ] = await Promise.all([
     supabase
       .from('contacts')
@@ -46,6 +47,11 @@ export default async function DashboardPage() {
       .eq('owner_id', user.id)
       .order('track')
       .order('position'),
+    supabase
+      .from('goals')
+      .select('*')
+      .eq('owner_id', user.id)
+      .order('created_at'),
   ])
 
   const allContacts = contacts ?? []
@@ -153,6 +159,32 @@ export default async function DashboardPage() {
         />
       </div>
 
+
+      {/* Metas — só aparece se tiveres metas criadas */}
+      {(goals ?? []).length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {(goals ?? []).map((g) => {
+            const pct = Math.min(100, Math.round((g.current_val / g.target) * 100))
+            return (
+              <Card key={g.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-muted-foreground">{g.label ?? g.metric}</span>
+                    <span className="text-xs font-bold text-primary">{pct}%</span>
+                  </div>
+                  <div className="flex items-end gap-1.5 mb-2.5">
+                    <span className="text-xl font-bold">{g.current_val.toLocaleString('pt-PT')}</span>
+                    <span className="text-xs text-muted-foreground mb-0.5">/ {g.target.toLocaleString('pt-PT')}</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
 
       {/* Funil + Leads encalhados */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">

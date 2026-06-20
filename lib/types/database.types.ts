@@ -291,6 +291,132 @@ export type Database = {
           }
         ]
       }
+      stage_transitions: {
+        Row: {
+          id: string
+          owner_id: string
+          contact_id: string
+          from_stage: string | null
+          to_stage: string | null
+          track: string | null
+          changed_at: string
+          days_in_prev: number | null
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          contact_id: string
+          from_stage?: string | null
+          to_stage?: string | null
+          track?: string | null
+          changed_at?: string
+          days_in_prev?: number | null
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          contact_id?: string
+          from_stage?: string | null
+          to_stage?: string | null
+          track?: string | null
+          changed_at?: string
+          days_in_prev?: number | null
+        }
+        Relationships: []
+      }
+      daily_snapshots: {
+        Row: {
+          id: string
+          owner_id: string
+          snapshot_date: string
+          total_leads: number
+          active_leads: number
+          pipeline_value: number
+          mrr: number
+          ztl_members: number
+          flc_members: number
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          snapshot_date?: string
+          total_leads?: number
+          active_leads?: number
+          pipeline_value?: number
+          mrr?: number
+          ztl_members?: number
+          flc_members?: number
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          snapshot_date?: string
+          total_leads?: number
+          active_leads?: number
+          pipeline_value?: number
+          mrr?: number
+          ztl_members?: number
+          flc_members?: number
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          id: string
+          owner_id: string
+          metric: string
+          label: string | null
+          target: number
+          current_val: number
+          period: string | null
+          period_start: string | null
+          period_end: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          metric: string
+          label?: string | null
+          target: number
+          current_val?: number
+          period?: string | null
+          period_start?: string | null
+          period_end?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          metric?: string
+          label?: string | null
+          target?: number
+          current_val?: number
+          period?: string | null
+          period_start?: string | null
+          period_end?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      lost_reasons: {
+        Row: {
+          id: string
+          owner_id: string
+          label: string
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          label: string
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          label?: string
+        }
+        Relationships: []
+      }
     }
     Views: { [_ in never]: never }
     Functions: { [_ in never]: never }
@@ -316,6 +442,9 @@ export type Tag = Tables<'tags'>
 export type Activity = Tables<'activities'>
 export type Task = Tables<'tasks'>
 export type DiscoveryNote = Tables<'discovery_notes'>
+export type Goal = Tables<'goals'>
+export type StageTransition = Tables<'stage_transitions'>
+export type DailySnapshot = Tables<'daily_snapshots'>
 
 // Valores válidos para campos enum-like
 export type LeadType = 'pme' | 'creator' | 'unknown'
