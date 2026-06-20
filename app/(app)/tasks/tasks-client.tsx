@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import Link from 'next/link'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +9,7 @@ import type { Task } from '@/lib/types/database.types'
 import { format, isPast, isToday, isTomorrow, isThisWeek } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+import { AlertCircle, User } from 'lucide-react'
 
 type TaskWithContact = Task & { contacts: { id: string; full_name: string } | null }
 
@@ -49,7 +50,8 @@ export function TasksClient({ tasks }: Props) {
   function handleToggle(task: TaskWithContact, checked: boolean) {
     setLocalDone((prev) => {
       const next = new Set(prev)
-      checked ? next.add(task.id) : next.delete(task.id)
+      if (checked) next.add(task.id)
+      else next.delete(task.id)
       return next
     })
     startTransition(async () => {
@@ -61,34 +63,83 @@ export function TasksClient({ tasks }: Props) {
   const groups = groupTasks(enriched)
 
   const sections = [
-    { key: 'overdue', label: 'Em atraso', tasks: groups.overdue, labelClass: 'text-destructive' },
-    { key: 'today', label: 'Hoje', tasks: groups.today, labelClass: 'text-primary' },
-    { key: 'tomorrow', label: 'Amanhã', tasks: groups.tomorrow, labelClass: '' },
-    { key: 'thisWeek', label: 'Esta semana', tasks: groups.thisWeek, labelClass: '' },
-    { key: 'later', label: 'Mais tarde', tasks: groups.later, labelClass: '' },
-    { key: 'noDue', label: 'Sem data', tasks: groups.noDue, labelClass: '' },
+    { key: 'overdue', label: 'Em atraso', tasks: groups.overdue, accent: 'destructive' as const },
+    { key: 'today', label: 'Hoje', tasks: groups.today, accent: 'today' as const },
+    { key: 'tomorrow', label: 'Amanhã', tasks: groups.tomorrow, accent: 'muted' as const },
+    { key: 'thisWeek', label: 'Esta semana', tasks: groups.thisWeek, accent: 'muted' as const },
+    { key: 'later', label: 'Mais tarde', tasks: groups.later, accent: 'muted' as const },
+    { key: 'noDue', label: 'Sem data', tasks: groups.noDue, accent: 'muted' as const },
   ].filter((s) => s.tasks.length > 0)
 
   const doneCount = groups.done.length
 
+  /* Progresso do dia: concluídas hoje vs total agendado para hoje */
+  const progress = useMemo(() => {
+    const total = enriched.length
+    const done = enriched.filter((t) => t.is_done).length
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0
+    return { total, done, pct }
+  }, [enriched])
+
   return (
-    <div className="space-y-6">
-      {sections.length === 0 && (
+    <div className="space-y-5">
+      {/* Resumo */}
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard
+          label="Em atraso"
+          value={groups.overdue.length}
+          alert={groups.overdue.length > 0}
+        />
+        <StatCard label="Para hoje" value={groups.today.length} accent />
+        <StatCard label="Esta semana" value={groups.thisWeek.length + groups.tomorrow.length} />
+      </div>
+
+      {/* Barra de progresso */}
+      {progress.total > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Progresso</span>
+            <span className="tabular-nums">{progress.done}/{progress.total} concluídas</span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all"
+              style={{ width: `${progress.pct}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {sections.length === 0 && doneCount === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          Sem tarefas pendentes. Bom trabalho!
+          Sem tarefas. Adiciona uma a partir de um contacto.
+        </p>
+      )}
+
+      {sections.length === 0 && doneCount > 0 && (
+        <p className="text-sm text-muted-foreground text-center py-8">
+          Sem tarefas pendentes. Bom trabalho! 🎉
         </p>
       )}
 
       {sections.map((section) => (
         <div key={section.key} className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <h2 className={cn('text-xs font-semibold uppercase tracking-wide', section.labelClass || 'text-muted-foreground')}>
+            <span
+              className={cn(
+                'w-1.5 h-1.5 rounded-full',
+                section.accent === 'destructive' && 'bg-destructive',
+                section.accent === 'today' && 'bg-primary',
+                section.accent === 'muted' && 'bg-muted-foreground/40'
+              )}
+            />
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {section.label}
             </h2>
-            <span className="text-xs text-muted-foreground">({section.tasks.length})</span>
+            <span className="text-xs text-muted-foreground/70">({section.tasks.length})</span>
           </div>
           {section.tasks.map((task) => (
-            <TaskRow key={task.id} task={task} onToggle={handleToggle} />
+            <TaskRow key={task.id} task={task} onToggle={handleToggle} accent={section.accent} />
           ))}
         </div>
       ))}
@@ -102,7 +153,7 @@ export function TasksClient({ tasks }: Props) {
             {showDone ? '▾' : '▸'} Concluídas ({doneCount})
           </button>
           {showDone && groups.done.map((task) => (
-            <TaskRow key={task.id} task={task} onToggle={handleToggle} />
+            <TaskRow key={task.id} task={task} onToggle={handleToggle} accent="muted" />
           ))}
         </div>
       )}
@@ -110,13 +161,44 @@ export function TasksClient({ tasks }: Props) {
   )
 }
 
-function TaskRow({ task, onToggle }: { task: TaskWithContact & { is_done: boolean }; onToggle: (t: TaskWithContact, c: boolean) => void }) {
+function StatCard({ label, value, accent, alert }: { label: string; value: number; accent?: boolean; alert?: boolean }) {
+  return (
+    <div className="bg-muted/50 rounded-lg px-3 py-2.5">
+      <div className="flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground">
+        {alert && <AlertCircle className="w-3 h-3 text-destructive" />}
+        <span className="truncate">{label}</span>
+      </div>
+      <div className={cn(
+        'text-lg sm:text-2xl font-bold mt-0.5',
+        alert && 'text-destructive',
+        accent && !alert && 'text-primary'
+      )}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function TaskRow({
+  task,
+  onToggle,
+  accent,
+}: {
+  task: TaskWithContact & { is_done: boolean }
+  onToggle: (t: TaskWithContact, c: boolean) => void
+  accent: 'destructive' | 'today' | 'muted'
+}) {
   const overdue = !task.is_done && task.due_date && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date))
 
   return (
     <div className={cn(
-      'flex items-start gap-3 p-3 rounded-lg border transition-colors',
-      task.is_done ? 'bg-muted/30 opacity-60' : 'bg-background hover:bg-muted/20',
+      'flex items-start gap-3 p-3 rounded-lg border border-l-2 transition-colors',
+      task.is_done
+        ? 'bg-muted/30 opacity-60 border-l-border'
+        : 'bg-card hover:bg-muted/20',
+      !task.is_done && accent === 'destructive' && 'border-l-destructive',
+      !task.is_done && accent === 'today' && 'border-l-primary',
+      !task.is_done && accent === 'muted' && 'border-l-border',
     )}>
       <Checkbox
         checked={task.is_done}
@@ -127,9 +209,13 @@ function TaskRow({ task, onToggle }: { task: TaskWithContact & { is_done: boolea
         <p className={cn('text-sm font-medium', task.is_done && 'line-through text-muted-foreground')}>
           {task.title}
         </p>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           {task.contacts && (
-            <Link href={`/contacts/${task.contacts.id}`} className="text-xs text-muted-foreground hover:underline truncate">
+            <Link
+              href={`/contacts/${task.contacts.id}`}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:underline truncate"
+            >
+              <User className="w-3 h-3 shrink-0" />
               {task.contacts.full_name}
             </Link>
           )}
@@ -138,7 +224,7 @@ function TaskRow({ task, onToggle }: { task: TaskWithContact & { is_done: boolea
               variant={overdue ? 'destructive' : 'secondary'}
               className="text-[10px] px-1.5 py-0 h-4 font-normal"
             >
-              {format(new Date(task.due_date), "d MMM", { locale: pt })}
+              {format(new Date(task.due_date), 'd MMM', { locale: pt })}
             </Badge>
           )}
         </div>
