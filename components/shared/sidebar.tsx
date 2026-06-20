@@ -21,11 +21,11 @@ export function Sidebar() {
     <>
       {/* Sidebar — só visível em desktop */}
       <aside className="desktop-only flex flex-col w-56 min-h-screen bg-sidebar border-r border-sidebar-border shrink-0">
-        <div className="flex items-center gap-2 px-4 h-14 border-b border-sidebar-border">
-          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary">
-            <Zap className="w-4 h-4 text-primary-foreground" />
+        <div className="flex items-center gap-2.5 px-4 h-14 border-b border-sidebar-border">
+          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary shadow-[0_0_12px_oklch(0.627_0.265_293/50%)]">
+            <Zap className="w-4 h-4 text-primary-foreground fill-primary-foreground" />
           </div>
-          <span className="font-semibold text-sm tracking-tight">AbrantesScale</span>
+          <span className="font-semibold text-sm tracking-tight text-foreground">AbrantesScale</span>
         </div>
 
         <nav className="flex-1 px-2 py-3 space-y-0.5">
