@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { AtSign, Euro, ChevronDown, ArrowDown } from 'lucide-react'
+import { AtSign, Euro, ChevronDown, ChevronLeft, ChevronRight, ArrowDown } from 'lucide-react'
 import { moveContact } from '@/app/(app)/pipeline/actions'
 import { LEAD_TYPE_LABELS } from '@/lib/validations/contact'
 import { cn } from '@/lib/utils'
@@ -230,6 +230,10 @@ function FunnelContactRow({
   currentStageId: string
   onMove: (contactId: string, newStageId: string, currentStageId: string) => void
 }) {
+  const idx = stages.findIndex((s) => s.id === currentStageId)
+  const prevStage = idx > 0 ? stages[idx - 1] : null
+  const nextStage = idx < stages.length - 1 ? stages[idx + 1] : null
+
   return (
     <div className="bg-background border rounded-lg p-2.5 flex items-center gap-2.5 shadow-sm">
       <span
@@ -258,15 +262,37 @@ function FunnelContactRow({
           )}
         </div>
       </div>
-      <select
-        value={currentStageId}
-        onChange={(e) => onMove(contact.id, e.target.value, currentStageId)}
-        className="text-xs text-muted-foreground bg-muted border border-border rounded-md px-2 py-1 cursor-pointer shrink-0 max-w-[110px]"
-      >
-        {stages.map((s) => (
-          <option key={s.id} value={s.id}>{s.name}</option>
-        ))}
-      </select>
+
+      {/* Navegação entre etapas */}
+      <div className="flex items-center gap-0.5 shrink-0">
+        <button
+          disabled={!prevStage}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            if (prevStage) onMove(contact.id, prevStage.id, currentStageId)
+          }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted active:scale-95 transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+          title={prevStage ? `Mover para "${prevStage.name}"` : undefined}
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <span className="text-[10px] text-muted-foreground w-16 text-center truncate leading-tight">
+          {stages[idx]?.name ?? '—'}
+        </span>
+        <button
+          disabled={!nextStage}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            if (nextStage) onMove(contact.id, nextStage.id, currentStageId)
+          }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted active:scale-95 transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+          title={nextStage ? `Mover para "${nextStage.name}"` : undefined}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   )
 }
