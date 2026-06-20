@@ -239,7 +239,7 @@ function MobileContactRow({
       <div className="flex-1 min-w-0">
         <Link
           href={`/contacts/${contact.id}`}
-          className="font-medium text-sm leading-tight hover:underline truncate block"
+          className="font-semibold text-sm leading-tight hover:underline truncate block"
         >
           {contact.full_name}
         </Link>

@@ -48,7 +48,7 @@ export function KanbanCard({ contact, isDragOverlay = false }: Props) {
         <Link
           href={`/contacts/${contact.id}`}
           onClick={(e) => e.stopPropagation()}
-          className="font-medium text-sm leading-tight hover:underline line-clamp-1"
+          className="font-semibold text-sm leading-tight hover:underline line-clamp-1"
         >
           {contact.full_name}
         </Link>

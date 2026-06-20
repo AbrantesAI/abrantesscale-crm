@@ -22,7 +22,7 @@ export function KanbanColumn({ stage, contacts }: Props) {
       {/* Cabeçalho da coluna */}
       <div className="flex items-center justify-between px-1 pb-2">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold truncate">{stage.name}</h3>
+          <h3 className="text-sm font-bold truncate">{stage.name}</h3>
           {contacts.length > 0 && (
             <span className="text-xs text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 font-medium">
               {contacts.length}
