@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Kanban, CheckSquare, LogOut, Zap } from 'lucide-react'
+import { LayoutDashboard, Users, Kanban, CheckSquare, LogOut } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,16 @@ export function Sidebar() {
       <aside className="desktop-only flex flex-col w-56 min-h-screen bg-sidebar border-r border-sidebar-border shrink-0">
         <div className="flex items-center gap-2.5 px-4 h-14 border-b border-sidebar-border">
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary shadow-[0_0_12px_oklch(0.627_0.265_293/50%)]">
-            <Zap className="w-4 h-4 text-primary-foreground fill-primary-foreground" />
+            <svg viewBox="0 0 22 22" fill="currentColor" className="w-4 h-4 text-primary-foreground">
+              {/* Barras ascendentes */}
+              <rect x="0.5" y="14" width="4.5" height="7.5" rx="0.4"/>
+              <rect x="7" y="10" width="4.5" height="11.5" rx="0.4"/>
+              <rect x="13.5" y="6" width="4.5" height="15.5" rx="0.4"/>
+              {/* Linha diagonal */}
+              <path d="M1 20.5 L17.5 3" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+              {/* Seta (triângulo no canto superior direito) */}
+              <polygon points="14.5,0.5 21.5,0.5 21.5,7.5"/>
+            </svg>
           </div>
           <span className="font-semibold text-sm tracking-tight text-foreground">AbrantesScale</span>
         </div>
