@@ -57,6 +57,7 @@ export type Database = {
           lead_type: string
           funnel_destination: string | null
           community_status: string
+          outreach_status: string | null
           content_pillar: string | null
           stage_changed_at: string
           created_at: string
@@ -81,6 +82,7 @@ export type Database = {
           lead_type?: string
           funnel_destination?: string | null
           community_status?: string
+          outreach_status?: string | null
           content_pillar?: string | null
           stage_changed_at?: string
           created_at?: string
@@ -105,6 +107,7 @@ export type Database = {
           lead_type?: string
           funnel_destination?: string | null
           community_status?: string
+          outreach_status?: string | null
           content_pillar?: string | null
           stage_changed_at?: string
           created_at?: string
@@ -417,6 +420,87 @@ export type Database = {
         }
         Relationships: []
       }
+      content_pieces: {
+        Row: {
+          id: string
+          owner_id: string
+          platform: string | null
+          format: string | null
+          pillar: string | null
+          title: string
+          hook: string | null
+          result_base: string | null
+          url: string | null
+          status: string
+          published_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          platform?: string | null
+          format?: string | null
+          pillar?: string | null
+          title: string
+          hook?: string | null
+          result_base?: string | null
+          url?: string | null
+          status?: string
+          published_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          platform?: string | null
+          format?: string | null
+          pillar?: string | null
+          title?: string
+          hook?: string | null
+          result_base?: string | null
+          url?: string | null
+          status?: string
+          published_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      icp_definition: {
+        Row: {
+          id: string
+          owner_id: string
+          sector: string | null
+          main_pain: string | null
+          ticket: string | null
+          qual_signals: string | null
+          red_flags: string | null
+          approach: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          sector?: string | null
+          main_pain?: string | null
+          ticket?: string | null
+          qual_signals?: string | null
+          red_flags?: string | null
+          approach?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          sector?: string | null
+          main_pain?: string | null
+          ticket?: string | null
+          qual_signals?: string | null
+          red_flags?: string | null
+          approach?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: { [_ in never]: never }
     Functions: { [_ in never]: never }
@@ -445,9 +529,15 @@ export type DiscoveryNote = Tables<'discovery_notes'>
 export type Goal = Tables<'goals'>
 export type StageTransition = Tables<'stage_transitions'>
 export type DailySnapshot = Tables<'daily_snapshots'>
+export type ContentPiece = Tables<'content_pieces'>
+export type IcpDefinition = Tables<'icp_definition'>
 
 // Valores válidos para campos enum-like
 export type LeadType = 'pme' | 'creator' | 'unknown'
+export type OutreachStatus = 'a_contactar' | 'ligado' | 'reuniao_marcada' | 'qualificado' | 'sem_interesse'
+export type ContentStatus = 'ideia' | 'rascunho' | 'publicado'
+export type ContentFormat = 'reel' | 'story' | 'post' | 'carrossel' | 'email'
+export type ContentPlatform = 'instagram' | 'skool' | 'newsletter' | 'linkedin'
 export type FunnelDestination = 'scalit' | 'zero_to_leverage' | 'full_leverage_circle' | 'mentoria_1a1'
 export type CommunityStatus = 'none' | 'zero_to_leverage' | 'full_leverage_circle'
 export type ContentPillar = 'ai_aplicada' | 'tudo_e_vendas' | 'builds_in_public' | 'mindset' | 'other'

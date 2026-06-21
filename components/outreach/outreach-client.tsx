@@ -1,0 +1,284 @@
+'use client'
+
+import { useState, useTransition, useMemo } from 'react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Plus, Phone, AtSign, ArrowRight, ExternalLink, AlertCircle } from 'lucide-react'
+import { createOutreachLead, updateOutreachStatus, promoteToPipeline } from '@/app/(app)/outreach/actions'
+import { SOURCE_LABELS } from '@/lib/validations/contact'
+import type { Contact, PipelineStage } from '@/lib/types/database.types'
+import { cn } from '@/lib/utils'
+
+type OutreachContact = Pick<Contact, 'id' | 'full_name' | 'company' | 'phone' | 'instagram' | 'source' | 'notes' | 'outreach_status' | 'created_at'>
+
+const STATUSES: { value: string; label: string; color: string }[] = [
+  { value: 'a_contactar',    label: '🔵 A contactar',    color: 'bg-slate-100 text-slate-700 border-slate-200' },
+  { value: 'ligado',         label: '📞 Ligado',          color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  { value: 'reuniao_marcada',label: '📅 Reunião marcada', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+  { value: 'qualificado',    label: '✅ Qualificado',     color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  { value: 'sem_interesse',  label: '⚪ Sem interesse',   color: 'bg-gray-100 text-gray-500 border-gray-200' },
+]
+
+const statusLabel = (v: string | null) => STATUSES.find(s => s.value === v)?.label ?? v ?? '—'
+const statusColor = (v: string | null) => STATUSES.find(s => s.value === v)?.color ?? ''
+
+export function OutreachClient({
+  contacts,
+  firstSalesStage,
+}: {
+  contacts: OutreachContact[]
+  firstSalesStage: PipelineStage | null
+}) {
+  const [filter, setFilter] = useState('all')
+  const [search, setSearch] = useState('')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [creating, startCreate] = useTransition()
+  const [pending, startUpdate] = useTransition()
+  const [localStatus, setLocalStatus] = useState<Record<string, string>>({})
+  const [promoted, setPromoted] = useState<Set<string>>(new Set())
+
+  const getStatus = (c: OutreachContact) => localStatus[c.id] ?? c.outreach_status ?? 'a_contactar'
+
+  const visible = useMemo(() =>
+    contacts
+      .filter(c => !promoted.has(c.id))
+      .filter(c => filter === 'all' || getStatus(c) === filter)
+      .filter(c => {
+        const q = search.toLowerCase()
+        return !q || c.full_name.toLowerCase().includes(q) || (c.company ?? '').toLowerCase().includes(q)
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [contacts, filter, search, localStatus, promoted]
+  )
+
+  const stats = useMemo(() => ({
+    total: contacts.filter(c => !promoted.has(c.id)).length,
+    ligado: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'ligado').length,
+    reuniao: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'reuniao_marcada').length,
+    qualificado: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'qualificado').length,
+  }), [contacts, localStatus, promoted])
+
+  function handleStatusChange(contactId: string, newStatus: string) {
+    setLocalStatus(prev => ({ ...prev, [contactId]: newStatus }))
+    startUpdate(async () => { await updateOutreachStatus(contactId, newStatus) })
+  }
+
+  function handlePromote(contactId: string) {
+    if (!firstSalesStage) return
+    setPromoted(prev => new Set([...prev, contactId]))
+    startUpdate(async () => { await promoteToPipeline(contactId, firstSalesStage.id) })
+  }
+
+  async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    startCreate(async () => {
+      const res = await createOutreachLead(fd)
+      if ('success' in res) setDialogOpen(false)
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: 'Total', value: stats.total },
+          { label: 'Ligados', value: stats.ligado, accent: true },
+          { label: 'Reuniões', value: stats.reuniao, accent: true },
+          { label: 'Qualificados', value: stats.qualificado, highlight: true },
+        ].map(({ label, value, accent, highlight }) => (
+          <div key={label} className="bg-muted/50 rounded-lg px-3 py-2.5">
+            <div className="text-[11px] text-muted-foreground truncate">{label}</div>
+            <div className={cn('text-2xl font-bold mt-0.5', highlight && 'text-emerald-500', accent && value > 0 && 'text-primary')}>
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Meta 20 leads */}
+      <div className="space-y-1">
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>Progresso da meta</span>
+          <span className="tabular-nums">{stats.total} / 20</span>
+        </div>
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(100, (stats.total / 20) * 100)}%` }} />
+        </div>
+      </div>
+
+      {/* Barra de ações */}
+      <div className="flex gap-2 flex-col sm:flex-row">
+        <div className="relative flex-1">
+          <Input placeholder="Pesquisar negócio..." value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <Select value={filter} onValueChange={v => setFilter(v ?? 'all')}>
+          <SelectTrigger className="sm:w-48">
+            <SelectValue placeholder="Todos os estados" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os estados</SelectItem>
+            {STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger render={<Button className="gap-1.5 shrink-0" />}>
+            <Plus className="w-4 h-4" />
+            Novo lead
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Novo lead de outreach</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreate} className="space-y-3 pt-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Nome do negócio *</label>
+                <Input name="full_name" placeholder="Ex: Padaria Central" required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Empresa</label>
+                <Input name="company" placeholder="Nome comercial" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Telefone</label>
+                  <Input name="phone" placeholder="912 345 678" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Instagram</label>
+                  <Input name="instagram" placeholder="@handle" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Fonte</label>
+                <select name="source" className="w-full text-sm bg-muted border border-border rounded-md px-3 py-2">
+                  <option value="">Seleciona a origem</option>
+                  {Object.entries(SOURCE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Notas</label>
+                <textarea name="notes" rows={2} placeholder="Observações rápidas..." className="w-full text-sm bg-muted border border-border rounded-md px-3 py-2 resize-none outline-none" />
+              </div>
+              <Button type="submit" className="w-full" disabled={creating}>
+                {creating ? 'A criar...' : 'Adicionar lead'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Lista */}
+      {visible.length === 0 ? (
+        <div className="border rounded-xl py-12 text-center text-sm text-muted-foreground">
+          {contacts.length === 0 ? 'Sem leads ainda. Adiciona o primeiro!' : 'Nenhum lead corresponde ao filtro.'}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {visible.map(contact => (
+            <OutreachRow
+              key={contact.id}
+              contact={contact}
+              currentStatus={getStatus(contact)}
+              onStatusChange={handleStatusChange}
+              onPromote={handlePromote}
+              canPromote={!!firstSalesStage}
+              pending={pending}
+            />
+          ))}
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground">{visible.length} lead{visible.length !== 1 ? 's' : ''}</p>
+    </div>
+  )
+}
+
+function OutreachRow({
+  contact, currentStatus, onStatusChange, onPromote, canPromote, pending,
+}: {
+  contact: OutreachContact
+  currentStatus: string
+  onStatusChange: (id: string, s: string) => void
+  onPromote: (id: string) => void
+  canPromote: boolean
+  pending: boolean
+}) {
+  return (
+    <div className="bg-card border rounded-xl p-3 space-y-2">
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link href={`/contacts/${contact.id}`} className="font-semibold text-sm hover:underline truncate">
+              {contact.full_name}
+            </Link>
+            {contact.company && contact.company !== contact.full_name && (
+              <span className="text-xs text-muted-foreground truncate">{contact.company}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+            {contact.phone && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Phone className="w-3 h-3" /> {contact.phone}
+              </span>
+            )}
+            {contact.instagram && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <AtSign className="w-3 h-3" /> {contact.instagram.replace('@', '')}
+              </span>
+            )}
+            {contact.source && (
+              <span className="text-xs text-muted-foreground">{SOURCE_LABELS[contact.source] ?? contact.source}</span>
+            )}
+          </div>
+          {contact.notes && (
+            <p className="text-xs text-muted-foreground/80 mt-1 line-clamp-1">{contact.notes}</p>
+          )}
+        </div>
+
+        {/* Promover */}
+        {currentStatus === 'qualificado' && canPromote && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onPromote(contact.id)}
+            disabled={pending}
+            className="shrink-0 gap-1 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10 text-xs h-7"
+          >
+            <ArrowRight className="w-3 h-3" />
+            Pipeline
+          </Button>
+        )}
+        <Link href={`/contacts/${contact.id}`} className="text-muted-foreground/50 hover:text-muted-foreground shrink-0">
+          <ExternalLink className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* Estado */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-muted-foreground shrink-0">Estado:</span>
+        <div className="flex gap-1 flex-wrap">
+          {STATUSES.map(s => (
+            <button
+              key={s.value}
+              onClick={() => onStatusChange(contact.id, s.value)}
+              className={cn(
+                'text-[10px] font-medium px-2 py-0.5 rounded-full border transition-all',
+                currentStatus === s.value
+                  ? s.color + ' ring-1 ring-offset-1 ring-current'
+                  : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground/50'
+              )}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

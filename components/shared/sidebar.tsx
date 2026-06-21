@@ -2,17 +2,21 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, LogOut, Crosshair, Euro, Target, FileText } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/contacts', label: 'Contactos', icon: Users },
-  { href: '/pipeline', label: 'Pipeline', icon: Kanban },
-  { href: '/tasks', label: 'Tarefas', icon: CheckSquare },
-  { href: '/settings', label: 'Definições', icon: Settings },
+  { href: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
+  { href: '/outreach',  label: 'Outreach',   icon: Crosshair },
+  { href: '/pipeline',  label: 'Pipeline',   icon: Kanban },
+  { href: '/contacts',  label: 'Contactos',  icon: Users },
+  { href: '/tasks',     label: 'Tarefas',    icon: CheckSquare },
+  { href: '/revenue',   label: 'Receita',    icon: Euro },
+  { href: '/icp',       label: 'ICP',        icon: Target },
+  { href: '/content',   label: 'Conteúdo',   icon: FileText },
+  { href: '/settings',  label: 'Definições', icon: Settings },
 ]
 
 export function Sidebar() {
@@ -75,32 +79,34 @@ export function Sidebar() {
       </aside>
 
       {/* Barra de navegação inferior — só visível em mobile */}
-      <nav className="mobile-only fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border flex items-center justify-around px-2 h-16">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + '/')
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-colors min-w-0',
-                active ? 'text-primary' : 'text-muted-foreground'
-              )}
+      <nav className="mobile-only fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border h-16">
+        <div className="flex items-center overflow-x-auto scrollbar-hide h-full px-1 gap-0.5 snap-x snap-mandatory">
+          {navItems.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(href + '/')
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  'flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-lg transition-colors shrink-0 snap-start',
+                  active ? 'text-primary' : 'text-muted-foreground'
+                )}
+              >
+                <Icon className="w-5 h-5 shrink-0" />
+                <span className="text-[9px] font-medium whitespace-nowrap">{label}</span>
+              </Link>
+            )
+          })}
+          <form action={logout} className="shrink-0 snap-start">
+            <button
+              type="submit"
+              className="flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-lg text-muted-foreground transition-colors"
             >
-              <Icon className="w-5 h-5 shrink-0" />
-              <span className="text-[10px] font-medium truncate">{label}</span>
-            </Link>
-          )
-        })}
-        <form action={logout}>
-          <button
-            type="submit"
-            className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg text-muted-foreground transition-colors"
-          >
-            <LogOut className="w-5 h-5 shrink-0" />
-            <span className="text-[10px] font-medium">Sair</span>
-          </button>
-        </form>
+              <LogOut className="w-5 h-5 shrink-0" />
+              <span className="text-[9px] font-medium">Sair</span>
+            </button>
+          </form>
+        </div>
       </nav>
     </>
   )
