@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-export async function saveIcp(data: {
+export async function saveIcp(track: string, data: {
   sector: string
   main_pain: string
   ticket: string
@@ -17,8 +17,8 @@ export async function saveIcp(data: {
   if (!user) redirect('/login')
 
   await supabase.from('icp_definition').upsert(
-    { owner_id: user.id, ...data, updated_at: new Date().toISOString() },
-    { onConflict: 'owner_id' }
+    { owner_id: user.id, track, ...data, updated_at: new Date().toISOString() },
+    { onConflict: 'owner_id,track' }
   )
 
   revalidatePath('/icp')

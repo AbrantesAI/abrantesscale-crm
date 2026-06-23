@@ -469,6 +469,7 @@ export type Database = {
         Row: {
           id: string
           owner_id: string
+          track: string
           sector: string | null
           main_pain: string | null
           ticket: string | null
@@ -480,6 +481,7 @@ export type Database = {
         Insert: {
           id?: string
           owner_id: string
+          track?: string
           sector?: string | null
           main_pain?: string | null
           ticket?: string | null
@@ -491,6 +493,7 @@ export type Database = {
         Update: {
           id?: string
           owner_id?: string
+          track?: string
           sector?: string | null
           main_pain?: string | null
           ticket?: string | null
