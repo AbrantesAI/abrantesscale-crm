@@ -18,11 +18,11 @@ export default async function IcpPage() {
   const communityIcp = data?.find(r => r.track === 'community') ?? null
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-4 sm:p-6 max-w-5xl mx-auto w-full">
       <div>
         <h1 className="text-xl font-bold">ICP — Perfil do Cliente Ideal</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Dois perfis: público da Comunidade / ZTL e clientes da Scalit
+          Dois espaços independentes: Marca Pessoal / ZTL e Agência Scalit
         </p>
       </div>
       <IcpClient salesIcp={salesIcp} communityIcp={communityIcp} />

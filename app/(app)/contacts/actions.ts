@@ -12,6 +12,7 @@ function parseContactForm(formData: FormData) {
   return contactSchema.safeParse({
     ...raw,
     deal_value: raw.deal_value || 0,
+    mrr: raw.mrr || 0,
     email: raw.email || null,
     instagram: raw.instagram || null,
     phone: raw.phone || null,

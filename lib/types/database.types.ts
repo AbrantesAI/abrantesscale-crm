@@ -50,6 +50,7 @@ export type Database = {
           source: string | null
           stage_id: string | null
           deal_value: number | null
+          mrr: number | null
           status: string
           notes: string | null
           ai_score: number | null
@@ -75,6 +76,7 @@ export type Database = {
           source?: string | null
           stage_id?: string | null
           deal_value?: number | null
+          mrr?: number | null
           status?: string
           notes?: string | null
           ai_score?: number | null
@@ -100,6 +102,7 @@ export type Database = {
           source?: string | null
           stage_id?: string | null
           deal_value?: number | null
+          mrr?: number | null
           status?: string
           notes?: string | null
           ai_score?: number | null

@@ -5,12 +5,14 @@ import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import {
   Users, TrendingUp, Euro, CheckSquare, AlertCircle,
-  ArrowRight, Clock, Flame, BarChart3,
+  ArrowRight, Clock, Flame, BarChart3, Gauge, Timer,
 } from 'lucide-react'
 import { SOURCE_LABELS, LEAD_TYPE_LABELS } from '@/lib/validations/contact'
 import { formatDistanceToNow, isPast, format, differenceInDays } from 'date-fns'
 import { pt } from 'date-fns/locale'
-import { PipelineFunnel } from '@/components/dashboard/pipeline-funnel'
+import { ConversionFunnel, type FunnelStage } from '@/components/dashboard/conversion-funnel'
+import { StageVelocity, type VelocityRow } from '@/components/dashboard/stage-velocity'
+import { TrendsChart } from '@/components/dashboard/trends-chart'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -23,6 +25,8 @@ export default async function DashboardPage() {
     { data: pendingTasks },
     { data: stages },
     { data: goals },
+    { data: transitions },
+    { data: snapshots },
   ] = await Promise.all([
     supabase
       .from('contacts')
@@ -43,7 +47,7 @@ export default async function DashboardPage() {
       .limit(6),
     supabase
       .from('pipeline_stages')
-      .select('id, name, position, track, is_won')
+      .select('id, name, position, track, win_prob, is_won, is_lost')
       .eq('owner_id', user.id)
       .order('track')
       .order('position'),
@@ -52,6 +56,18 @@ export default async function DashboardPage() {
       .select('*')
       .eq('owner_id', user.id)
       .order('created_at'),
+    supabase
+      .from('stage_transitions')
+      .select('from_stage, days_in_prev, track')
+      .eq('owner_id', user.id)
+      .eq('track', 'sales')
+      .not('days_in_prev', 'is', null),
+    supabase
+      .from('daily_snapshots')
+      .select('snapshot_date, pipeline_value, mrr, flc_members')
+      .eq('owner_id', user.id)
+      .order('snapshot_date', { ascending: true })
+      .limit(30),
   ])
 
   const allContacts = contacts ?? []
@@ -84,13 +100,51 @@ export default async function DashboardPage() {
   const sortedSources = Object.entries(sourceCounts).sort(([, a], [, b]) => b - a).slice(0, 6)
   const maxSourceCount = sortedSources[0]?.[1] ?? 1
 
-  // Funil por etapa (track sales)
+  // Funil por etapa (dois tracks) com valor e probabilidade
   const salesStages = (stages ?? []).filter((s) => s.track === 'sales')
-  const funnelData = salesStages.map((s) => ({
-    name: s.name,
-    count: active.filter((c) => c.stage_id === s.id).length,
-    isWon: s.is_won ?? false,
-  }))
+  const communityStages = (stages ?? []).filter((s) => s.track === 'community')
+
+  const buildFunnel = (trackStages: typeof salesStages): FunnelStage[] =>
+    trackStages.map((s) => {
+      const inStage = active.filter((c) => c.stage_id === s.id)
+      return {
+        id: s.id,
+        name: s.name,
+        count: inStage.length,
+        value: inStage.reduce((sum, c) => sum + (c.deal_value ?? 0), 0),
+        winProb: s.win_prob ?? 0,
+        isWon: s.is_won ?? false,
+        isLost: s.is_lost ?? false,
+      }
+    })
+
+  const salesFunnel = buildFunnel(salesStages)
+  const communityFunnel = buildFunnel(communityStages)
+
+  // Valor ponderado do pipeline (Σ deal_value × win_prob), só etapas abertas
+  const stageById = new Map((stages ?? []).map((s) => [s.id, s]))
+  const weightedValue = active.reduce((sum, c) => {
+    const s = c.stage_id ? stageById.get(c.stage_id) : null
+    if (!s || s.is_won || s.is_lost) return sum
+    return sum + (c.deal_value ?? 0) * (s.win_prob ?? 0)
+  }, 0)
+
+  // Velocidade por etapa (tempo médio antes de avançar) — de stage_transitions
+  const velAgg = new Map<string, { sum: number; n: number }>()
+  for (const t of transitions ?? []) {
+    if (!t.from_stage || t.days_in_prev == null) continue
+    const e = velAgg.get(t.from_stage) ?? { sum: 0, n: 0 }
+    e.sum += Number(t.days_in_prev)
+    e.n += 1
+    velAgg.set(t.from_stage, e)
+  }
+  const velocityData: VelocityRow[] = salesStages
+    .map((s) => {
+      const e = velAgg.get(s.id)
+      if (!e || e.n === 0) return null
+      return { name: s.name, avgDays: Math.round((e.sum / e.n) * 10) / 10, count: e.n }
+    })
+    .filter((v): v is VelocityRow => v !== null)
 
   // Leads encalhados (sem mover há > 14 dias, não ganhos)
   const stuckLeads = active
@@ -138,7 +192,7 @@ export default async function DashboardPage() {
         <KpiCard
           title="Pipeline aberto"
           value={`${pipelineValue.toLocaleString('pt-PT')} €`}
-          sub={wonValue > 0 ? `${wonValue.toLocaleString('pt-PT')} € ganho` : 'Sem ganhos ainda'}
+          sub={`${Math.round(weightedValue).toLocaleString('pt-PT')} € ponderado`}
           icon={<Euro className="w-4 h-4" />}
           accent="green"
         />
@@ -186,17 +240,17 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Funil + Leads encalhados */}
+      {/* Funil de conversão + Leads encalhados */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <Card className="lg:col-span-3">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
-              <CardTitle className="text-sm font-semibold">Funil Scalit / PME</CardTitle>
+              <CardTitle className="text-sm font-semibold">Funil de conversão</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <PipelineFunnel data={funnelData} />
+            <ConversionFunnel sales={salesFunnel} community={communityFunnel} />
           </CardContent>
         </Card>
 
@@ -251,6 +305,51 @@ export default async function DashboardPage() {
             >
               Ver pipeline <ArrowRight className="w-3 h-3" />
             </Link>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Velocidade por etapa + Previsão ponderada */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <Card className="lg:col-span-3">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Timer className="w-4 h-4 text-primary" />
+              <CardTitle className="text-sm font-semibold">Velocidade por etapa</CardTitle>
+              <span className="text-[10px] text-muted-foreground">tempo médio antes de avançar</span>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <StageVelocity data={velocityData} />
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Gauge className="w-4 h-4 text-emerald-400" />
+              <CardTitle className="text-sm font-semibold">Previsão ponderada</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-end gap-1.5">
+              <span className="text-3xl font-bold text-emerald-400 tabular-nums">
+                {Math.round(weightedValue).toLocaleString('pt-PT')} €
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Soma do valor de cada negócio × probabilidade da etapa.
+            </p>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs">
+              <span className="text-muted-foreground">Pipeline bruto em aberto</span>
+              <span className="font-semibold tabular-nums">{pipelineValue.toLocaleString('pt-PT')} €</span>
+            </div>
+            {wonValue > 0 && (
+              <div className="flex items-center justify-between mt-1.5 text-xs">
+                <span className="text-muted-foreground">Já ganho</span>
+                <span className="font-semibold text-emerald-400 tabular-nums">{wonValue.toLocaleString('pt-PT')} €</span>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -368,6 +467,9 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Tendências */}
+      <TrendsChart snapshots={snapshots ?? []} />
 
       {/* Próximas tarefas */}
       <Card>

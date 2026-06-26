@@ -9,7 +9,6 @@ export default async function RevenuePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Etapa "Ganho" do track sales
   const { data: stages } = await supabase
     .from('pipeline_stages')
     .select('id, is_won, is_lost')
@@ -23,7 +22,7 @@ export default async function RevenuePage() {
     wonStageId
       ? supabase
           .from('contacts')
-          .select('id, full_name, company, deal_value, stage_changed_at')
+          .select('id, full_name, company, deal_value, mrr, stage_changed_at')
           .eq('owner_id', user.id)
           .eq('stage_id', wonStageId)
           .eq('status', 'active')
@@ -42,27 +41,28 @@ export default async function RevenuePage() {
       : { data: [] },
     supabase
       .from('goals')
-      .select('target')
+      .select('metric, target')
       .eq('owner_id', user.id)
-      .eq('metric', 'mrr')
-      .order('period_start', { ascending: false })
-      .limit(1),
+      .in('metric', ['mrr', 'salary'])
+      .order('period_start', { ascending: false }),
   ])
 
-  const mrrGoal = goals?.[0]?.target ?? 3000
+  const mrrGoal = goals?.find(g => g.metric === 'mrr')?.target ?? 3000
+  const salary = goals?.find(g => g.metric === 'salary')?.target ?? 0
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-3xl mx-auto w-full">
       <div>
         <h1 className="text-xl font-bold">Receita</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          MRR da Scalit e pipeline de valor
+          Salário + MRR Scalit e pipeline de valor
         </p>
       </div>
       <RevenueClient
         wonContacts={wonContacts ?? []}
         pipelineContacts={pipelineContacts ?? []}
         mrrGoal={mrrGoal}
+        salary={salary}
       />
     </div>
   )

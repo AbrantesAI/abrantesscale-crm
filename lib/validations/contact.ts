@@ -13,6 +13,7 @@ export const contactSchema = z.object({
   community_status: z.enum(['none', 'zero_to_leverage', 'full_leverage_circle']).default('none'),
   content_pillar: z.enum(['ai_aplicada', 'tudo_e_vendas', 'builds_in_public', 'mindset', 'other']).optional().nullable(),
   deal_value: z.coerce.number().min(0).default(0),
+  mrr: z.coerce.number().min(0).default(0),
   notes: z.string().optional().nullable(),
   stage_id: z.string().uuid().optional().nullable(),
 })

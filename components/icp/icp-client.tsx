@@ -2,14 +2,13 @@
 
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
-import { Pencil, CheckCircle2, ShieldAlert, Lightbulb, Briefcase, Euro, Search, Heart, Target, MapPin, Star } from 'lucide-react'
+import { Pencil, CheckCircle2, ShieldAlert, Lightbulb, Briefcase, Euro, Search, Heart, Target, Star } from 'lucide-react'
 import { saveIcp } from '@/app/(app)/icp/actions'
 import { cn } from '@/lib/utils'
 import type { IcpDefinition } from '@/lib/types/database.types'
 
 type IcpData = Pick<IcpDefinition, 'sector' | 'main_pain' | 'ticket' | 'qual_signals' | 'red_flags' | 'approach'>
 
-// ── Campos do ICP de Vendas (Scalit / PME) ──────────────────
 const SALES_FIELDS: { key: keyof IcpData; label: string; placeholder: string; icon: React.ReactNode; span?: boolean }[] = [
   { key: 'sector',       label: 'Setor ideal',              placeholder: 'Ex: Restauração, Clínicas, E-commerce PME...', icon: <Briefcase className="w-4 h-4" /> },
   { key: 'main_pain',    label: 'Dor principal',            placeholder: 'Ex: Não têm tempo para marketing, precisam de mais clientes...', icon: <Search className="w-4 h-4" /> },
@@ -19,17 +18,15 @@ const SALES_FIELDS: { key: keyof IcpData; label: string; placeholder: string; ic
   { key: 'approach',     label: 'Gancho de abordagem',      placeholder: 'Ex: "Ajudo restaurantes a atrair 20% mais clientes com IA em 30 dias"', icon: <Lightbulb className="w-4 h-4" />, span: true },
 ]
 
-// ── Campos do ICP de Comunidade (Zero to Leverage) ──────────
 const COMMUNITY_FIELDS: { key: keyof IcpData; label: string; placeholder: string; icon: React.ReactNode; span?: boolean }[] = [
-  { key: 'sector',       label: 'A Pessoa',                 placeholder: 'Quem é o teu ICP? Descreve a "Pessoa B"...', icon: <Target className="w-4 h-4" /> },
-  { key: 'main_pain',    label: 'A Dor',                    placeholder: 'A dor interna / auto-traição...', icon: <Heart className="w-4 h-4" /> },
-  { key: 'ticket',       label: 'O Desejo',                 placeholder: 'O que ela quer a longo prazo vs. o que a move agora...', icon: <Star className="w-4 h-4" /> },
+  { key: 'sector',       label: 'A Pessoa',                      placeholder: 'Quem é o teu ICP? Descreve a "Pessoa B"...', icon: <Target className="w-4 h-4" /> },
+  { key: 'main_pain',    label: 'A Dor',                         placeholder: 'A dor interna / auto-traição...', icon: <Heart className="w-4 h-4" /> },
+  { key: 'ticket',       label: 'O Desejo',                      placeholder: 'O que ela quer a longo prazo vs. o que a move agora...', icon: <Star className="w-4 h-4" /> },
   { key: 'qual_signals', label: 'Nível & Sinais de Qualificação', placeholder: 'Nível 1 — já tentou, bateu na parede...', icon: <CheckCircle2 className="w-4 h-4" /> },
-  { key: 'red_flags',    label: 'Anti-ICP (quem NÃO queremos)', placeholder: 'Sonhador passivo, quer solução mágica...', icon: <ShieldAlert className="w-4 h-4" /> },
-  { key: 'approach',     label: 'O Porquê Tu (autoridade)', placeholder: 'As tuas provas reais, o teu diferencial...', icon: <Lightbulb className="w-4 h-4" />, span: true },
+  { key: 'red_flags',    label: 'Anti-ICP (quem NÃO queremos)',  placeholder: 'Sonhador passivo, quer solução mágica...', icon: <ShieldAlert className="w-4 h-4" /> },
+  { key: 'approach',     label: 'O Porquê Tu (autoridade)',      placeholder: 'As tuas provas reais, o teu diferencial...', icon: <Lightbulb className="w-4 h-4" />, span: true },
 ]
 
-// ── Valores pré-preenchidos do documento [C] ICP — Zero to Leverage ──
 const COMMUNITY_DEFAULTS: IcpData = {
   sector: `Action taker queimado — já tentou muita coisa (cursos, side-hustles, várias tentativas), bateu na parede vezes sem conta e recuou para um conforto resignado. O "conforto" não é preguiça — é o refúgio de quem já levou pancada. Parada porque já tentou e falhou, não por nunca ter tentado.
 
@@ -123,14 +120,14 @@ function IcpForm({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-end">
         {!editing ? (
-          <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1.5 ml-auto">
+          <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1.5">
             <Pencil className="w-3.5 h-3.5" />
             Editar
           </Button>
         ) : (
-          <div className="flex gap-2 ml-auto">
+          <div className="flex gap-2">
             {icp && (
               <Button size="sm" variant="ghost" onClick={() => { setForm(initial); setEditing(false) }}>
                 Cancelar
@@ -143,12 +140,9 @@ function IcpForm({
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {fields.map(({ key, label, placeholder, icon, span }) => (
-          <div
-            key={key}
-            className={cn('bg-card border rounded-xl p-4 space-y-2', span && 'sm:col-span-2')}
-          >
+      <div className="grid grid-cols-1 gap-3">
+        {fields.map(({ key, label, placeholder, icon }) => (
+          <div key={key} className="bg-card border rounded-xl p-4 space-y-2">
             <div className="flex items-center gap-2 text-primary">
               {icon}
               <span className="text-xs font-semibold uppercase tracking-wide">{label}</span>
@@ -158,7 +152,7 @@ function IcpForm({
                 value={form[key] ?? ''}
                 onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
                 placeholder={placeholder}
-                rows={span ? 5 : 3}
+                rows={4}
                 className="w-full text-sm bg-muted border border-border rounded-md px-3 py-2 resize-y outline-none focus:ring-1 focus:ring-primary transition-all"
               />
             ) : (
@@ -180,58 +174,47 @@ export function IcpClient({
   salesIcp: IcpData | null
   communityIcp: IcpData | null
 }) {
-  const [tab, setTab] = useState<'sales' | 'community'>('community')
-
   return (
-    <div className="space-y-4">
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
-        <button
-          onClick={() => setTab('community')}
-          className={cn(
-            'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
-            tab === 'community' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          Comunidade / ZTL
-        </button>
-        <button
-          onClick={() => setTab('sales')}
-          className={cn(
-            'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
-            tab === 'sales' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          Scalit / PME
-        </button>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      {/* ── Espaço 1: Marca Pessoal / ZTL ── */}
+      <div className="space-y-4">
+        <div className="border-b border-border pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-violet-500" />
+            <h2 className="text-base font-semibold">Marca Pessoal</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 ml-4">
+            Zero to Leverage · Full Leverage Circle · Mentoria 1:1
+          </p>
+          <p className="text-xs text-amber-500 font-medium mt-0.5 ml-4">
+            Estado: hipótese de trabalho — a validar com dados reais dos Reels
+          </p>
+        </div>
+        <IcpForm
+          track="community"
+          fields={COMMUNITY_FIELDS}
+          icp={communityIcp}
+          defaultValues={COMMUNITY_DEFAULTS}
+        />
       </div>
 
-      {tab === 'community' && (
-        <>
-          <p className="text-sm text-muted-foreground">
-            Perfil do público para os Reels, Zero to Leverage e comunidade. <span className="text-amber-500 font-medium">Estado: hipótese de trabalho</span> — a validar com dados reais dos Reels.
+      {/* ── Espaço 2: Agência Scalit ── */}
+      <div className="space-y-4">
+        <div className="border-b border-border pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-primary" />
+            <h2 className="text-base font-semibold">Agência Scalit</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 ml-4">
+            PMEs · AI & Automação · Pipeline B2B
           </p>
-          <IcpForm
-            track="community"
-            fields={COMMUNITY_FIELDS}
-            icp={communityIcp}
-            defaultValues={COMMUNITY_DEFAULTS}
-          />
-        </>
-      )}
-
-      {tab === 'sales' && (
-        <>
-          <p className="text-sm text-muted-foreground">
-            Perfil do cliente ideal para outreach e pipeline da Scalit (PMEs).
-          </p>
-          <IcpForm
-            track="sales"
-            fields={SALES_FIELDS}
-            icp={salesIcp}
-          />
-        </>
-      )}
+        </div>
+        <IcpForm
+          track="sales"
+          fields={SALES_FIELDS}
+          icp={salesIcp}
+        />
+      </div>
     </div>
   )
 }

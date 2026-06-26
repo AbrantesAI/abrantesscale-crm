@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Kanban, CheckSquare, Settings, LogOut, Crosshair, Euro, Target, FileText } from 'lucide-react'
+import {
+  LayoutDashboard, Users, Kanban, CheckSquare, Settings,
+  LogOut, Crosshair, Euro, Target, FileText,
+} from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
@@ -24,61 +26,62 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Sidebar — só visível em desktop */}
-      <aside className="desktop-only flex flex-col w-56 min-h-screen bg-sidebar border-r border-sidebar-border shrink-0">
-        <div className="flex items-center gap-2.5 px-4 h-14 border-b border-sidebar-border">
-          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary shadow-[0_0_12px_oklch(0.65_0.22_245/50%)]">
-            <svg viewBox="0 0 22 22" fill="currentColor" className="w-4 h-4 text-primary-foreground">
-              {/* Barras ascendentes */}
+      {/* ── Sidebar desktop ─────────────────────────────────── */}
+      <aside className="desktop-only flex flex-col w-[76px] min-h-screen bg-sidebar border-r border-sidebar-border shrink-0">
+        {/* Logo */}
+        <div className="flex items-center justify-center h-[60px] border-b border-sidebar-border shrink-0">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary shadow-[0_0_14px_oklch(0.65_0.22_245/45%)]">
+            <svg viewBox="0 0 22 22" fill="currentColor" className="w-5 h-5 text-primary-foreground">
               <rect x="0.5" y="14" width="4.5" height="7.5" rx="0.4"/>
-              <rect x="7" y="10" width="4.5" height="11.5" rx="0.4"/>
+              <rect x="7"   y="10" width="4.5" height="11.5" rx="0.4"/>
               <rect x="13.5" y="6" width="4.5" height="15.5" rx="0.4"/>
-              {/* Linha diagonal */}
               <path d="M1 20.5 L17.5 3" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
-              {/* Seta (triângulo no canto superior direito) */}
               <polygon points="14.5,0.5 21.5,0.5 21.5,7.5"/>
             </svg>
           </div>
-          <span className="font-semibold text-sm tracking-tight text-foreground">AbrantesScale</span>
         </div>
 
-        <nav className="flex-1 px-2 py-3 space-y-0.5">
+        {/* Navegação */}
+        <nav className="flex-1 flex flex-col items-center gap-0.5 py-3 px-2 overflow-y-auto">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(href + '/')
             return (
               <Link
                 key={href}
                 href={href}
+                title={label}
                 className={cn(
-                  'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                  'flex flex-col items-center justify-center gap-1.5 w-full py-2.5 rounded-xl transition-all duration-150 group',
                   active
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}
               >
-                <Icon className="w-4 h-4 shrink-0" />
-                {label}
+                <Icon className="w-[18px] h-[18px] shrink-0" />
+                <span className="text-[9.5px] font-semibold leading-none tracking-tight text-center px-0.5 truncate w-full text-center">
+                  {label}
+                </span>
               </Link>
             )
           })}
         </nav>
 
-        <div className="px-2 pb-3 border-t border-sidebar-border pt-3">
-          <form action={logout}>
-            <Button
+        {/* Logout */}
+        <div className="flex flex-col items-center px-2 pb-3 pt-2 border-t border-sidebar-border shrink-0">
+          <form action={logout} className="w-full">
+            <button
               type="submit"
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-2.5 text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50"
+              title="Sair"
+              className="flex flex-col items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-150"
             >
-              <LogOut className="w-4 h-4" />
-              Sair
-            </Button>
+              <LogOut className="w-[18px] h-[18px] shrink-0" />
+              <span className="text-[9.5px] font-semibold leading-none tracking-tight">Sair</span>
+            </button>
           </form>
         </div>
       </aside>
 
-      {/* Barra de navegação inferior — só visível em mobile */}
+      {/* ── Barra inferior mobile ────────────────────────────── */}
       <nav className="mobile-only fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border h-16">
         <div className="flex items-center overflow-x-auto scrollbar-hide h-full px-1 gap-0.5 snap-x snap-mandatory">
           {navItems.map(({ href, label, icon: Icon }) => {

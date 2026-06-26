@@ -112,9 +112,14 @@ export function ContactForm({ action, contact, stages = [], onSuccess }: Props) 
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="deal_value">Valor potencial (€)</Label>
+          <Label htmlFor="deal_value">Setup / Projeto (€)</Label>
           <Input id="deal_value" name="deal_value" type="number" min="0" step="0.01"
             defaultValue={contact?.deal_value ?? 0} placeholder="0" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="mrr">Mensalidade / MRR (€)</Label>
+          <Input id="mrr" name="mrr" type="number" min="0" step="0.01"
+            defaultValue={contact?.mrr ?? 0} placeholder="0" />
         </div>
         {stages.length > 0 && (
           <div className="col-span-2 space-y-1.5">
