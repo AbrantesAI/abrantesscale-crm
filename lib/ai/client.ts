@@ -1,9 +1,22 @@
-import Groq from 'groq-sdk'
+import Anthropic from '@anthropic-ai/sdk'
 
-export function getGroqClient() {
-  const apiKey = process.env.GROQ_API_KEY
-  if (!apiKey) throw new Error('GROQ_API_KEY não está definida.')
-  return new Groq({ apiKey })
+export function getAnthropicClient() {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY não está definida.')
+  return new Anthropic({ apiKey })
 }
 
-export const GROQ_MODEL = 'llama-3.3-70b-versatile'
+export const CLAUDE_MODEL = 'claude-opus-4-8'
+
+/**
+ * Extrai o texto de uma resposta da Messages API.
+ * A resposta vem como um array de blocos (texto, thinking, etc.) —
+ * juntamos apenas os blocos de texto.
+ */
+export function extractText(message: Anthropic.Message): string {
+  return message.content
+    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+    .map((block) => block.text)
+    .join('')
+    .trim()
+}

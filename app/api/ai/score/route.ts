@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getGroqClient, GROQ_MODEL } from '@/lib/ai/client'
+import { getAnthropicClient, CLAUDE_MODEL, extractText } from '@/lib/ai/client'
 import { buildContactContext, SYSTEM_PROMPT } from '@/lib/ai/prompts'
 
 export async function POST(req: NextRequest) {
@@ -20,12 +20,13 @@ export async function POST(req: NextRequest) {
     if (!contact) return NextResponse.json({ error: 'Contacto não encontrado' }, { status: 404 })
 
     const context = buildContactContext(contact, activities ?? [], discoveryNote ?? null)
-    const groq = getGroqClient()
+    const anthropic = getAnthropicClient()
 
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
+    const response = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 512,
+      system: SYSTEM_PROMPT,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: `Analisa este lead e dá uma pontuação de 1 a 10 (10 = lead perfeito, muito provável de converter).
 
 Dados do contacto:
@@ -34,11 +35,11 @@ ${context}
 Responde APENAS com JSON neste formato exato, sem mais nada:
 {"score": <número 1-10>, "reason": "<1-2 frases a explicar a pontuação>"}` },
       ],
-      response_format: { type: 'json_object' },
     })
 
-    const text = completion.choices[0].message.content ?? ''
-    const parsed = JSON.parse(text)
+    const text = extractText(response)
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text)
 
     await supabase
       .from('contacts')

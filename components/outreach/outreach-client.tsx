@@ -4,10 +4,11 @@ import { useState, useTransition, useMemo } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Phone, AtSign, ArrowRight, ExternalLink, AlertCircle } from 'lucide-react'
+import { Plus, Phone, AtSign, ArrowRight, ExternalLink, AlertCircle, MessageCircle, Copy, Check, RefreshCw, Sparkles } from 'lucide-react'
 import { createOutreachLead, updateOutreachStatus, promoteToPipeline } from '@/app/(app)/outreach/actions'
 import { SOURCE_LABELS } from '@/lib/validations/contact'
 import type { Contact, PipelineStage } from '@/lib/types/database.types'
@@ -209,6 +210,43 @@ function OutreachRow({
   canPromote: boolean
   pending: boolean
 }) {
+  const [dmOpen, setDmOpen] = useState(false)
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [error, setError] = useState('')
+
+  async function generateMessage() {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/ai/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactId: contact.id, channel: 'dm', goal: 'outreach' }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setMessage(data.message)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao gerar mensagem')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function toggleDm() {
+    const next = !dmOpen
+    setDmOpen(next)
+    if (next && !message && !loading) generateMessage()
+  }
+
+  async function copyMessage() {
+    await navigator.clipboard.writeText(message)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
     <div className="bg-card border rounded-xl p-3 space-y-2">
       <div className="flex items-start gap-2">
@@ -241,6 +279,20 @@ function OutreachRow({
           )}
         </div>
 
+        {/* Gerar/copiar DM de Instagram */}
+        <button
+          onClick={toggleDm}
+          title="Mensagem de Instagram"
+          className={cn(
+            'shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md border transition-colors',
+            dmOpen
+              ? 'bg-primary/10 text-primary border-primary/30'
+              : 'text-muted-foreground border-border hover:text-foreground hover:border-muted-foreground/50'
+          )}
+        >
+          <MessageCircle className="w-3.5 h-3.5" />
+        </button>
+
         {/* Promover */}
         {currentStatus === 'qualificado' && canPromote && (
           <Button
@@ -258,6 +310,45 @@ function OutreachRow({
           <ExternalLink className="w-4 h-4" />
         </Link>
       </div>
+
+      {/* Painel da mensagem de Instagram */}
+      {dmOpen && (
+        <div className="rounded-lg border bg-muted/40 p-2.5 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+              <Sparkles className="w-3 h-3 text-primary" />
+              DM gerada {contact.instagram && <>para <span className="text-foreground">{contact.instagram.replace('@', '')}</span></>}
+            </span>
+            <button
+              onClick={generateMessage}
+              disabled={loading}
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-50"
+            >
+              <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} />
+              Outra versão
+            </button>
+          </div>
+
+          {loading && !message ? (
+            <p className="text-xs text-muted-foreground py-2 text-center">A escrever uma mensagem única...</p>
+          ) : message ? (
+            <>
+              <Textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                rows={4}
+                className="text-sm resize-none bg-background"
+              />
+              <Button size="sm" variant="outline" className="w-full h-7 text-xs gap-1.5" onClick={copyMessage}>
+                {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                {copied ? 'Copiado!' : 'Copiar mensagem'}
+              </Button>
+            </>
+          ) : null}
+
+          {error && <p className="text-[11px] text-destructive">{error}</p>}
+        </div>
+      )}
 
       {/* Estado */}
       <div className="flex items-center gap-2">

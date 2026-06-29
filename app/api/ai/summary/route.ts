@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getGroqClient, GROQ_MODEL } from '@/lib/ai/client'
+import { getAnthropicClient, CLAUDE_MODEL, extractText } from '@/lib/ai/client'
 import { buildContactContext, SYSTEM_PROMPT } from '@/lib/ai/prompts'
 
 export async function POST(req: NextRequest) {
@@ -20,12 +20,13 @@ export async function POST(req: NextRequest) {
     if (!contact) return NextResponse.json({ error: 'Contacto não encontrado' }, { status: 404 })
 
     const context = buildContactContext(contact, activities ?? [], discoveryNote ?? null)
-    const groq = getGroqClient()
+    const anthropic = getAnthropicClient()
 
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
+    const response = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: `Cria um resumo executivo deste lead em 3-4 frases. Inclui: quem é, qual o potencial, onde está no funil e qual o próximo passo recomendado.
 
 Dados do contacto:
@@ -35,7 +36,7 @@ Responde apenas com o resumo, sem formatação extra.` },
       ],
     })
 
-    const summary = completion.choices[0].message.content?.trim() ?? ''
+    const summary = extractText(response)
 
     await supabase
       .from('contacts')
