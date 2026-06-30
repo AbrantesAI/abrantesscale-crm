@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useTransition, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -216,6 +216,20 @@ function OutreachRow({
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
 
+  const storageKey = `outreach-dm-${contact.id}`
+
+  // Carregar a DM guardada (persiste mesmo ao sair/fechar a app)
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (saved) setMessage(saved)
+  }, [storageKey])
+
+  // Guardar sempre que a mensagem muda (gerar, regenerar ou editar à mão)
+  useEffect(() => {
+    if (message) localStorage.setItem(storageKey, message)
+  }, [message, storageKey])
+
   async function generateMessage() {
     setLoading(true)
     setError('')
@@ -285,7 +299,7 @@ function OutreachRow({
           title="Mensagem de Instagram"
           className={cn(
             'shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md border transition-colors',
-            dmOpen
+            dmOpen || message
               ? 'bg-primary/10 text-primary border-primary/30'
               : 'text-muted-foreground border-border hover:text-foreground hover:border-muted-foreground/50'
           )}
