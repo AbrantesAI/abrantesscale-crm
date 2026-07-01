@@ -156,9 +156,9 @@
    paleta clara. Branco "menos forte" + 50% de transparência, com frosted blur
    para manter a legibilidade sobre o fundo escuro/partículas. */
 .day [data-slot="card"] {
-  --card: oklch(0.9 0.012 250 / 50%);
+  --card: oklch(0.9 0.012 250 / 65%);
   --card-foreground: oklch(0.22 0.03 258);
-  --background: oklch(0.94 0.008 250 / 55%);
+  --background: oklch(0.94 0.008 250 / 65%);
   --foreground: oklch(0.22 0.03 258);
   --muted: oklch(0.7 0.02 255 / 30%);
   --muted-foreground: oklch(0.34 0.03 258);
