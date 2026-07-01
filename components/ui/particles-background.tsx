@@ -47,13 +47,17 @@ export function ParticlesBackground({
     }
 
     function resize() {
-      const rect = canvas!.getBoundingClientRect()
-      width = rect.width
-      height = rect.height
+      // Medir pelo viewport (o canvas é um fundo fixed inset-0), não pelo
+      // getBoundingClientRect — que no 1.º paint devolve o tamanho intrínseco
+      // do canvas (300×150) e concentrava tudo no canto superior esquerdo.
+      width = window.innerWidth
+      height = window.innerHeight
       if (width === 0 || height === 0) return
       dpr = Math.min(window.devicePixelRatio || 1, 2)
       canvas!.width = Math.round(width * dpr)
       canvas!.height = Math.round(height * dpr)
+      canvas!.style.width = `${width}px`
+      canvas!.style.height = `${height}px`
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0)
       seed()
     }
@@ -107,15 +111,15 @@ export function ParticlesBackground({
     resize()
     draw()
 
-    const ro = new ResizeObserver(() => {
+    const onResize = () => {
       resize()
       if (reduceMotion) draw()
-    })
-    ro.observe(canvas)
+    }
+    window.addEventListener('resize', onResize)
 
     return () => {
       cancelAnimationFrame(raf)
-      ro.disconnect()
+      window.removeEventListener('resize', onResize)
     }
   }, [density, color])
 
