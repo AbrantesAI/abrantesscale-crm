@@ -149,6 +149,28 @@
   --sidebar-ring: oklch(0.65 0.22 245 / 50%);
 }
 
+/* ─── Caixas (cards) com fundo branco suave ───
+   Escopo só ao interior das caixas: remapeia os tokens de superfície para uma
+   paleta clara. Assim tudo lá dentro (texto, linhas, barras, badges, divisores)
+   adapta-se automaticamente, sem tocar no fundo escuro da app nem na sidebar.
+   Branco "não muito intenso": off-white com leve tom frio. */
+[data-slot="card"] {
+  --card: oklch(0.955 0.006 250);
+  --card-foreground: oklch(0.26 0.03 255);
+  --background: oklch(0.985 0.004 250);
+  --foreground: oklch(0.26 0.03 255);
+  --muted: oklch(0.915 0.008 250);
+  --muted-foreground: oklch(0.48 0.03 255);
+  --secondary: oklch(0.93 0.01 250);
+  --secondary-foreground: oklch(0.3 0.03 255);
+  --accent: oklch(0.9 0.02 250);
+  --accent-foreground: oklch(0.32 0.04 255);
+  --border: oklch(0.87 0.012 255);
+  --input: oklch(0.9 0.012 255);
+  --popover: oklch(0.985 0.004 250);
+  --popover-foreground: oklch(0.26 0.03 255);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
