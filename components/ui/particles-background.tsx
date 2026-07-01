@@ -47,15 +47,13 @@ export function ParticlesBackground({
     }
 
     function resize() {
-      const parent = canvas!.parentElement
-      if (!parent) return
-      width = parent.clientWidth
-      height = parent.clientHeight
+      const rect = canvas!.getBoundingClientRect()
+      width = rect.width
+      height = rect.height
+      if (width === 0 || height === 0) return
       dpr = Math.min(window.devicePixelRatio || 1, 2)
-      canvas!.width = width * dpr
-      canvas!.height = height * dpr
-      canvas!.style.width = width + 'px'
-      canvas!.style.height = height + 'px'
+      canvas!.width = Math.round(width * dpr)
+      canvas!.height = Math.round(height * dpr)
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0)
       seed()
     }
@@ -110,7 +108,7 @@ export function ParticlesBackground({
       resize()
       if (reduceMotion) draw()
     })
-    if (canvas.parentElement) ro.observe(canvas.parentElement)
+    ro.observe(canvas)
 
     return () => {
       cancelAnimationFrame(raf)

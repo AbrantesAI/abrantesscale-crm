@@ -6,7 +6,6 @@ import { AtSign, Euro, ChevronDown, ChevronLeft, ChevronRight, ArrowDown } from 
 import { moveContact, updateDealValue } from '@/app/(app)/pipeline/actions'
 import { LEAD_TYPE_LABELS } from '@/lib/validations/contact'
 import { cn, normalizeProb } from '@/lib/utils'
-import { ParticlesBackground } from '@/components/ui/particles-background'
 import type { PipelineStage, Contact } from '@/lib/types/database.types'
 
 type CardContact = Pick<Contact, 'id' | 'full_name' | 'instagram' | 'lead_type' | 'deal_value' | 'stage_id'>
@@ -106,6 +105,9 @@ export function PipelineFunnel({ stages, contacts }: Props) {
     </div>
   )
 
+  const selectedStage = filteredStages.find((s) => s.id === openStage) ?? null
+  const selectedContacts = selectedStage ? contactsByStage(selectedStage.id) : []
+
   return (
     <div className="flex flex-col gap-4 flex-1 min-h-0">
       {trackSelector}
@@ -117,112 +119,127 @@ export function PipelineFunnel({ stages, contacts }: Props) {
         <SummaryCard label="Conversão total" value={summary.conv + '%'} />
       </div>
 
-      {/* Funil */}
-      <div className="relative flex-1 min-h-0 rounded-2xl border border-primary/10 bg-[#070d1a]/60 overflow-hidden">
-        <ParticlesBackground className="z-0 opacity-70" />
-
-        <div className="relative z-10 flex flex-col gap-1.5 overflow-y-auto h-full px-3 sm:px-4 py-4">
-          {filteredStages.length === 0 && (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm py-12 text-center">
+      {/* Funil + painel de contactos */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
+        {/* Cone — centra-se e cabe todo; só faz scroll em ecrãs muito baixos */}
+        <div className="lg:flex-1 min-h-0 rounded-2xl border border-primary/10 bg-[#0a1120]/40 backdrop-blur-[1px] px-3 sm:px-6 py-4 flex flex-col overflow-y-auto">
+          <div className="m-auto w-full flex flex-col gap-1">
+          {filteredStages.length === 0 ? (
+            <div className="flex items-center justify-center text-muted-foreground text-sm py-12 text-center">
               Sem etapas configuradas. Corre o seed das pipeline_stages no Supabase.
             </div>
-          )}
+          ) : (
+            filteredStages.map((stage, i) => {
+              const stageContacts = contactsByStage(stage.id)
+              const count = stageContacts.length
+              const totalValue = stageContacts.reduce((sum, c) => sum + (c.deal_value ?? 0), 0)
+              const prevCount = i > 0 ? counts[i - 1] : null
+              const dropoff = prevCount && prevCount > 0 ? Math.round((count / prevCount) * 100) : null
+              const isOpen = openStage === stage.id
+              const shade = shadeFor(stage, i)
+              // Largura desenha a forma de funil (estreita a cada etapa); o número mostra os leads.
+              const n = filteredStages.length
+              const coneW = n <= 1 ? 82 : 96 - (i / (n - 1)) * (96 - 40)
 
-          {filteredStages.map((stage, i) => {
-            const stageContacts = contactsByStage(stage.id)
-            const count = stageContacts.length
-            const totalValue = stageContacts.reduce((sum, c) => sum + (c.deal_value ?? 0), 0)
-            const prevCount = i > 0 ? counts[i - 1] : null
-            const dropoff = prevCount && prevCount > 0 ? Math.round((count / prevCount) * 100) : null
-            const isOpen = openStage === stage.id
-            const shade = shadeFor(stage, i)
-            // Largura desenha a forma de funil (estreita a cada etapa); o número mostra os leads.
-            const n = filteredStages.length
-            const coneW = n <= 1 ? 84 : 94 - (i / (n - 1)) * (94 - 42)
-
-            return (
-              <div key={stage.id}>
-                {dropoff !== null && (
-                  <div className="flex items-center justify-center gap-1 text-[11px] text-white/45 py-0.5">
-                    <ArrowDown className="w-3 h-3" />
-                    {dropoff}%
-                  </div>
-                )}
-
-                {/* Linha da etapa */}
-                <button
-                  onClick={() => setOpenStage(isOpen ? null : stage.id)}
-                  className="w-full flex items-center gap-2 sm:gap-3 group"
-                >
-                  <div className="w-20 sm:w-32 shrink-0 text-right text-xs sm:text-sm font-medium truncate text-white/90">
-                    {stage.name}
-                  </div>
-
-                  <div className="flex-1 flex justify-center min-w-0">
-                    <div
-                      className="relative h-11 sm:h-14 flex items-center justify-center text-white font-bold text-base sm:text-lg transition-all duration-300 group-hover:brightness-125 group-hover:-translate-y-px"
-                      style={{
-                        width: `${coneW}%`,
-                        minWidth: 72,
-                        clipPath: 'polygon(5% 0%, 95% 0%, 87% 100%, 13% 100%)',
-                        background: `linear-gradient(180deg, ${shade}, ${shade}bb)`,
-                        boxShadow: `0 0 0 1px ${shade}88 inset`,
-                        filter: `drop-shadow(0 3px 10px ${shade}55)`,
-                      }}
-                    >
-                      {/* brilho superior */}
-                      <span
-                        className="absolute inset-x-0 top-0 h-1/2 opacity-40"
-                        style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.35), transparent)', clipPath: 'inherit' }}
-                      />
-                      <span className="relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]">{count}</span>
+              return (
+                <div key={stage.id}>
+                  {dropoff !== null && (
+                    <div className="flex items-center justify-center gap-1 text-[10px] text-white/35 leading-none py-px">
+                      <ArrowDown className="w-2.5 h-2.5" />
+                      {dropoff}%
                     </div>
-                  </div>
+                  )}
 
-                  <div className="w-[84px] sm:w-28 shrink-0 text-left">
-                    <div className="text-[11px] sm:text-xs text-white/90 truncate">
-                      {totalValue > 0 ? eur(totalValue) : '—'}
+                  <button
+                    onClick={() => setOpenStage(isOpen ? null : stage.id)}
+                    className="w-full flex items-center gap-2 sm:gap-3 group"
+                    title={`${stage.name} · ${count} lead${count !== 1 ? 's' : ''}`}
+                  >
+                    <div className="w-16 sm:w-28 shrink-0 text-right text-[11px] sm:text-sm font-medium truncate text-white/85">
+                      {stage.name}
                     </div>
-                    <div className="text-[10px] sm:text-[11px] text-white/45">
-                      {Math.round(normalizeProb(stage.win_prob) * 100)}% prob.
-                    </div>
-                  </div>
 
-                  <ChevronDown
-                    className={cn(
-                      'w-4 h-4 shrink-0 text-white/45 transition-transform',
-                      isOpen && 'rotate-180'
-                    )}
-                  />
-                </button>
-
-                {/* Contactos da etapa */}
-                {isOpen && (
-                  <div className="mt-2 mb-1 mx-auto w-full max-w-2xl flex flex-col gap-1.5">
-                    {stageContacts.length === 0 ? (
-                      <p className="text-xs text-white/50 py-1 text-center">Sem contactos nesta etapa.</p>
-                    ) : (
-                      stageContacts.map((c) => (
-                        <FunnelContactRow
-                          key={c.id}
-                          contact={c}
-                          stages={filteredStages}
-                          currentStageId={stage.id}
-                          onMove={handleMove}
+                    <div className="flex-1 flex justify-center min-w-0">
+                      <div
+                        className={cn(
+                          'relative h-9 sm:h-12 flex items-center justify-center gap-1.5 text-white font-bold transition-all duration-300',
+                          'group-hover:brightness-125 group-hover:-translate-y-px',
+                          isOpen && 'brightness-125 -translate-y-px'
+                        )}
+                        style={{
+                          width: `${coneW}%`,
+                          minWidth: 64,
+                          clipPath: 'polygon(6% 0%, 94% 0%, 86% 100%, 14% 100%)',
+                          background: `linear-gradient(180deg, ${shade}, ${shade}bb)`,
+                          boxShadow: isOpen
+                            ? `0 0 0 1.5px #fff8 inset, 0 4px 18px ${shade}88`
+                            : `0 0 0 1px ${shade}88 inset`,
+                          filter: `drop-shadow(0 3px 10px ${shade}55)`,
+                        }}
+                      >
+                        <span
+                          className="absolute inset-x-0 top-0 h-1/2 opacity-40 pointer-events-none"
+                          style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.4), transparent)', clipPath: 'inherit' }}
                         />
-                      ))
-                    )}
-                  </div>
+                        <span className="relative text-sm sm:text-lg drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]">{count}</span>
+                      </div>
+                    </div>
+
+                    <div className="w-[70px] sm:w-24 shrink-0 text-left">
+                      <div className="text-[10px] sm:text-xs text-white/85 truncate">
+                        {totalValue > 0 ? eur(totalValue) : '—'}
+                      </div>
+                      <div className="text-[9px] sm:text-[11px] text-white/40">
+                        {Math.round(normalizeProb(stage.win_prob) * 100)}% prob.
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )
+            })
+          )}
+          </div>
+        </div>
+
+        {/* Painel de contactos da etapa selecionada */}
+        <div className="lg:w-80 xl:w-96 shrink-0 min-h-0 rounded-2xl border border-primary/10 bg-[#0a1120]/40 backdrop-blur-[1px] flex flex-col">
+          {selectedStage ? (
+            <>
+              <div className="px-3.5 py-3 border-b border-white/10">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-white/90 truncate">{selectedStage.name}</h3>
+                  <span className="text-xs text-white/50 shrink-0">
+                    {selectedContacts.length} lead{selectedContacts.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto p-2.5 flex flex-col gap-1.5">
+                {selectedContacts.length === 0 ? (
+                  <p className="text-xs text-white/45 py-6 text-center">Sem contactos nesta etapa.</p>
+                ) : (
+                  selectedContacts.map((c) => (
+                    <FunnelContactRow
+                      key={c.id}
+                      contact={c}
+                      stages={filteredStages}
+                      currentStageId={selectedStage.id}
+                      onMove={handleMove}
+                    />
+                  ))
                 )}
               </div>
-            )
-          })}
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center gap-2 p-6 text-center">
+              <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                <ChevronDown className="w-5 h-5 text-primary" />
+              </div>
+              <p className="text-sm text-white/60">Seleciona uma etapa</p>
+              <p className="text-xs text-white/40">Toca num segmento do funil para ver e mover os contactos dessa etapa.</p>
+            </div>
+          )}
         </div>
       </div>
-
-      <p className="text-[11px] text-muted-foreground shrink-0">
-        Toca numa etapa para ver os contactos · a largura desenha o funil, o número são os leads em cada etapa
-      </p>
     </div>
   )
 }
