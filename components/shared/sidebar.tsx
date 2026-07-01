@@ -27,7 +27,7 @@ export function Sidebar() {
   return (
     <>
       {/* ── Sidebar desktop ─────────────────────────────────── */}
-      <aside className="desktop-only flex flex-col w-[76px] min-h-screen bg-sidebar border-r border-sidebar-border shrink-0">
+      <aside className="desktop-only sticky top-0 self-start flex flex-col w-[76px] h-screen bg-sidebar border-r border-primary/50 shadow-[1px_0_16px_oklch(0.65_0.22_245/12%)] shrink-0">
         {/* Logo */}
         <div className="flex items-center justify-center h-[60px] border-b border-sidebar-border shrink-0">
           <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary shadow-[0_0_14px_oklch(0.65_0.22_245/45%)]">
