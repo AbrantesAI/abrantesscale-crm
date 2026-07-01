@@ -8,6 +8,7 @@ import {
   ArrowRight, Clock, Flame, BarChart3, Gauge, Timer,
 } from 'lucide-react'
 import { SOURCE_LABELS, LEAD_TYPE_LABELS } from '@/lib/validations/contact'
+import { normalizeProb } from '@/lib/utils'
 import { formatDistanceToNow, isPast, format, differenceInDays } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import { ConversionFunnel, type FunnelStage } from '@/components/dashboard/conversion-funnel'
@@ -112,7 +113,7 @@ export default async function DashboardPage() {
         name: s.name,
         count: inStage.length,
         value: inStage.reduce((sum, c) => sum + (c.deal_value ?? 0), 0),
-        winProb: s.win_prob ?? 0,
+        winProb: normalizeProb(s.win_prob),
         isWon: s.is_won ?? false,
         isLost: s.is_lost ?? false,
       }
@@ -126,7 +127,7 @@ export default async function DashboardPage() {
   const weightedValue = active.reduce((sum, c) => {
     const s = c.stage_id ? stageById.get(c.stage_id) : null
     if (!s || s.is_won || s.is_lost) return sum
-    return sum + (c.deal_value ?? 0) * (s.win_prob ?? 0)
+    return sum + (c.deal_value ?? 0) * normalizeProb(s.win_prob)
   }, 0)
 
   // Velocidade por etapa (tempo médio antes de avançar) — de stage_transitions

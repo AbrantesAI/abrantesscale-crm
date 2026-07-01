@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { AtSign, Euro, ChevronDown, ChevronLeft, ChevronRight, ArrowDown } from 'lucide-react'
 import { moveContact, updateDealValue } from '@/app/(app)/pipeline/actions'
 import { LEAD_TYPE_LABELS } from '@/lib/validations/contact'
-import { cn } from '@/lib/utils'
+import { cn, normalizeProb } from '@/lib/utils'
+import { ParticlesBackground } from '@/components/ui/particles-background'
 import type { PipelineStage, Contact } from '@/lib/types/database.types'
 
 type CardContact = Pick<Contact, 'id' | 'full_name' | 'instagram' | 'lead_type' | 'deal_value' | 'stage_id'>
@@ -54,7 +55,6 @@ export function PipelineFunnel({ stages, contacts }: Props) {
   )
 
   const counts = filteredStages.map((s) => contactsByStage(s.id).length)
-  const maxCount = Math.max(1, ...counts)
 
   const summary = useMemo(() => {
     const flowStages = filteredStages.filter((s) => !s.is_lost)
@@ -118,91 +118,110 @@ export function PipelineFunnel({ stages, contacts }: Props) {
       </div>
 
       {/* Funil */}
-      <div className="flex flex-col gap-1 overflow-y-auto flex-1 pb-2">
-        {filteredStages.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm py-12 text-center">
-            Sem etapas configuradas. Corre o seed das pipeline_stages no Supabase.
-          </div>
-        )}
+      <div className="relative flex-1 min-h-0 rounded-2xl border border-primary/10 bg-[#070d1a]/60 overflow-hidden">
+        <ParticlesBackground className="z-0 opacity-70" />
 
-        {filteredStages.map((stage, i) => {
-          const stageContacts = contactsByStage(stage.id)
-          const count = stageContacts.length
-          const pct = Math.max(24, Math.round((count / maxCount) * 100))
-          const totalValue = stageContacts.reduce((sum, c) => sum + (c.deal_value ?? 0), 0)
-          const prevCount = i > 0 ? counts[i - 1] : null
-          const dropoff = prevCount && prevCount > 0 ? Math.round((count / prevCount) * 100) : null
-          const isOpen = openStage === stage.id
-
-          return (
-            <div key={stage.id}>
-              {dropoff !== null && (
-                <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground py-0.5">
-                  <ArrowDown className="w-3 h-3" />
-                  {dropoff}%
-                </div>
-              )}
-
-              {/* Linha da etapa */}
-              <button
-                onClick={() => setOpenStage(isOpen ? null : stage.id)}
-                className="w-full flex items-center gap-2 sm:gap-3 group"
-              >
-                <div className="w-20 sm:w-32 shrink-0 text-right text-xs sm:text-sm font-medium truncate">
-                  {stage.name}
-                </div>
-
-                <div className="flex-1 flex justify-center min-w-0">
-                  <div
-                    className="h-9 sm:h-10 rounded-lg flex items-center justify-center text-white text-sm font-semibold transition-all group-hover:brightness-110"
-                    style={{ width: `${pct}%`, minWidth: 44, backgroundColor: shadeFor(stage, i) }}
-                  >
-                    {count}
-                  </div>
-                </div>
-
-                <div className="w-[84px] sm:w-28 shrink-0 text-left">
-                  <div className="text-[11px] sm:text-xs text-foreground/90 truncate">
-                    {totalValue > 0 ? eur(totalValue) : '—'}
-                  </div>
-                  <div className="text-[10px] sm:text-[11px] text-muted-foreground">
-                    {Math.round((stage.win_prob ?? 0) * 100)}% prob.
-                  </div>
-                </div>
-
-                <ChevronDown
-                  className={cn(
-                    'w-4 h-4 shrink-0 text-muted-foreground transition-transform',
-                    isOpen && 'rotate-180'
-                  )}
-                />
-              </button>
-
-              {/* Contactos da etapa */}
-              {isOpen && (
-                <div className="mt-1.5 mb-1 ml-[88px] sm:ml-[140px] mr-7 flex flex-col gap-1.5">
-                  {stageContacts.length === 0 ? (
-                    <p className="text-xs text-muted-foreground/70 py-1">Sem contactos nesta etapa.</p>
-                  ) : (
-                    stageContacts.map((c) => (
-                      <FunnelContactRow
-                        key={c.id}
-                        contact={c}
-                        stages={filteredStages}
-                        currentStageId={stage.id}
-                        onMove={handleMove}
-                      />
-                    ))
-                  )}
-                </div>
-              )}
+        <div className="relative z-10 flex flex-col gap-1.5 overflow-y-auto h-full px-3 sm:px-4 py-4">
+          {filteredStages.length === 0 && (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm py-12 text-center">
+              Sem etapas configuradas. Corre o seed das pipeline_stages no Supabase.
             </div>
-          )
-        })}
+          )}
+
+          {filteredStages.map((stage, i) => {
+            const stageContacts = contactsByStage(stage.id)
+            const count = stageContacts.length
+            const totalValue = stageContacts.reduce((sum, c) => sum + (c.deal_value ?? 0), 0)
+            const prevCount = i > 0 ? counts[i - 1] : null
+            const dropoff = prevCount && prevCount > 0 ? Math.round((count / prevCount) * 100) : null
+            const isOpen = openStage === stage.id
+            const shade = shadeFor(stage, i)
+            // Largura desenha a forma de funil (estreita a cada etapa); o número mostra os leads.
+            const n = filteredStages.length
+            const coneW = n <= 1 ? 84 : 94 - (i / (n - 1)) * (94 - 42)
+
+            return (
+              <div key={stage.id}>
+                {dropoff !== null && (
+                  <div className="flex items-center justify-center gap-1 text-[11px] text-white/45 py-0.5">
+                    <ArrowDown className="w-3 h-3" />
+                    {dropoff}%
+                  </div>
+                )}
+
+                {/* Linha da etapa */}
+                <button
+                  onClick={() => setOpenStage(isOpen ? null : stage.id)}
+                  className="w-full flex items-center gap-2 sm:gap-3 group"
+                >
+                  <div className="w-20 sm:w-32 shrink-0 text-right text-xs sm:text-sm font-medium truncate text-white/90">
+                    {stage.name}
+                  </div>
+
+                  <div className="flex-1 flex justify-center min-w-0">
+                    <div
+                      className="relative h-11 sm:h-14 flex items-center justify-center text-white font-bold text-base sm:text-lg transition-all duration-300 group-hover:brightness-125 group-hover:-translate-y-px"
+                      style={{
+                        width: `${coneW}%`,
+                        minWidth: 72,
+                        clipPath: 'polygon(5% 0%, 95% 0%, 87% 100%, 13% 100%)',
+                        background: `linear-gradient(180deg, ${shade}, ${shade}bb)`,
+                        boxShadow: `0 0 0 1px ${shade}88 inset`,
+                        filter: `drop-shadow(0 3px 10px ${shade}55)`,
+                      }}
+                    >
+                      {/* brilho superior */}
+                      <span
+                        className="absolute inset-x-0 top-0 h-1/2 opacity-40"
+                        style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.35), transparent)', clipPath: 'inherit' }}
+                      />
+                      <span className="relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]">{count}</span>
+                    </div>
+                  </div>
+
+                  <div className="w-[84px] sm:w-28 shrink-0 text-left">
+                    <div className="text-[11px] sm:text-xs text-white/90 truncate">
+                      {totalValue > 0 ? eur(totalValue) : '—'}
+                    </div>
+                    <div className="text-[10px] sm:text-[11px] text-white/45">
+                      {Math.round(normalizeProb(stage.win_prob) * 100)}% prob.
+                    </div>
+                  </div>
+
+                  <ChevronDown
+                    className={cn(
+                      'w-4 h-4 shrink-0 text-white/45 transition-transform',
+                      isOpen && 'rotate-180'
+                    )}
+                  />
+                </button>
+
+                {/* Contactos da etapa */}
+                {isOpen && (
+                  <div className="mt-2 mb-1 mx-auto w-full max-w-2xl flex flex-col gap-1.5">
+                    {stageContacts.length === 0 ? (
+                      <p className="text-xs text-white/50 py-1 text-center">Sem contactos nesta etapa.</p>
+                    ) : (
+                      stageContacts.map((c) => (
+                        <FunnelContactRow
+                          key={c.id}
+                          contact={c}
+                          stages={filteredStages}
+                          currentStageId={stage.id}
+                          onMove={handleMove}
+                        />
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       <p className="text-[11px] text-muted-foreground shrink-0">
-        Toca numa etapa para ver os contactos · a largura é proporcional ao número de leads
+        Toca numa etapa para ver os contactos · a largura desenha o funil, o número são os leads em cada etapa
       </p>
     </div>
   )
