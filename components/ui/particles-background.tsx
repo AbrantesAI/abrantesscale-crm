@@ -12,8 +12,8 @@ type Particle = { x: number; y: number; vx: number; vy: number; r: number }
  */
 export function ParticlesBackground({
   className,
-  density = 0.00009,
-  color = '92, 160, 246', // azul Scalit (rgb)
+  density = 0.00004,
+  color = '110, 180, 255', // azul Scalit (rgb)
 }: {
   className?: string
   density?: number
@@ -33,16 +33,16 @@ export function ParticlesBackground({
     let dpr = Math.min(window.devicePixelRatio || 1, 2)
     let particles: Particle[] = []
     let raf = 0
-    const LINK_DIST = 130
+    const LINK_DIST = 116
 
     function seed() {
       const count = Math.round(width * height * density)
-      particles = Array.from({ length: Math.max(12, Math.min(90, count)) }, () => ({
+      particles = Array.from({ length: Math.max(16, Math.min(55, count)) }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-        r: Math.random() * 1.6 + 0.8,
+        vx: (Math.random() - 0.5) * 0.22,
+        vy: (Math.random() - 0.5) * 0.22,
+        r: Math.random() * 1.3 + 1,
       }))
     }
 
@@ -70,7 +70,8 @@ export function ParticlesBackground({
         }
       }
 
-      // Linhas entre partículas próximas
+      // Linhas subtis entre partículas próximas
+      ctx!.lineWidth = 0.7
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const a = particles[i]
@@ -79,9 +80,8 @@ export function ParticlesBackground({
           const dy = a.y - b.y
           const dist = Math.hypot(dx, dy)
           if (dist < LINK_DIST) {
-            const alpha = (1 - dist / LINK_DIST) * 0.35
+            const alpha = (1 - dist / LINK_DIST) * 0.16
             ctx!.strokeStyle = `rgba(${color}, ${alpha})`
-            ctx!.lineWidth = 0.6
             ctx!.beginPath()
             ctx!.moveTo(a.x, a.y)
             ctx!.lineTo(b.x, b.y)
@@ -90,13 +90,16 @@ export function ParticlesBackground({
         }
       }
 
-      // Pontos
+      // Pontos (nós) com brilho
+      ctx!.shadowColor = `rgba(${color}, 0.9)`
+      ctx!.shadowBlur = 6
+      ctx!.fillStyle = `rgba(${color}, 0.9)`
       for (const p of particles) {
-        ctx!.fillStyle = `rgba(${color}, 0.7)`
         ctx!.beginPath()
         ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2)
         ctx!.fill()
       }
+      ctx!.shadowBlur = 0
 
       if (!reduceMotion) raf = requestAnimationFrame(draw)
     }
