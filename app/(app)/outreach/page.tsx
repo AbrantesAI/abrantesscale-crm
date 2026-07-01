@@ -37,6 +37,7 @@ export default async function OutreachPage() {
       </div>
       <OutreachClient
         contacts={contacts ?? []}
+        salesStages={stages ?? []}
         firstSalesStage={firstSalesStage}
       />
     </div>

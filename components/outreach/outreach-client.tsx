@@ -16,22 +16,35 @@ import { cn } from '@/lib/utils'
 
 type OutreachContact = Pick<Contact, 'id' | 'full_name' | 'company' | 'phone' | 'instagram' | 'source' | 'notes' | 'outreach_status' | 'created_at'>
 
+// Estados de Outreach alinhados com as etapas do Pipeline (mesmo vocabulário).
+// Ordem = funil único focado em fechar: frio → contactado → qualificado → discovery call → entra no pipeline.
 const STATUSES: { value: string; label: string; color: string }[] = [
   { value: 'a_contactar',    label: '🔵 A contactar',    color: 'bg-slate-100 text-slate-700 border-slate-200' },
-  { value: 'ligado',         label: '📞 Ligado',          color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { value: 'reuniao_marcada',label: '📅 Reunião marcada', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+  { value: 'ligado',         label: '📞 Contactado',      color: 'bg-blue-100 text-blue-700 border-blue-200' },
   { value: 'qualificado',    label: '✅ Qualificado',     color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  { value: 'reuniao_marcada',label: '📅 Discovery call',  color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
   { value: 'sem_interesse',  label: '⚪ Sem interesse',   color: 'bg-gray-100 text-gray-500 border-gray-200' },
 ]
 
-const statusLabel = (v: string | null) => STATUSES.find(s => s.value === v)?.label ?? v ?? '—'
-const statusColor = (v: string | null) => STATUSES.find(s => s.value === v)?.color ?? ''
+// Estados a partir dos quais o lead já é uma oportunidade real e pode entrar no pipeline.
+const PROMOTABLE = new Set(['qualificado', 'reuniao_marcada'])
+
+// Mapeia o estado de Outreach para a etapa de Pipeline correspondente (por nome),
+// para que ao promover o lead caia na etapa certa em vez de voltar sempre a "Lead".
+function targetStageFor(status: string, salesStages: PipelineStage[], fallback: PipelineStage | null): PipelineStage | null {
+  const byName = (kw: string) => salesStages.find(s => s.name.toLowerCase().includes(kw)) ?? null
+  if (status === 'reuniao_marcada') return byName('discovery') ?? byName('reuni') ?? fallback
+  if (status === 'qualificado')     return byName('qualific') ?? fallback
+  return fallback
+}
 
 export function OutreachClient({
   contacts,
+  salesStages,
   firstSalesStage,
 }: {
   contacts: OutreachContact[]
+  salesStages: PipelineStage[]
   firstSalesStage: PipelineStage | null
 }) {
   const [filter, setFilter] = useState('all')
@@ -58,9 +71,9 @@ export function OutreachClient({
 
   const stats = useMemo(() => ({
     total: contacts.filter(c => !promoted.has(c.id)).length,
-    ligado: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'ligado').length,
-    reuniao: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'reuniao_marcada').length,
+    contactado: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'ligado').length,
     qualificado: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'qualificado').length,
+    discovery: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'reuniao_marcada').length,
   }), [contacts, localStatus, promoted])
 
   function handleStatusChange(contactId: string, newStatus: string) {
@@ -68,10 +81,11 @@ export function OutreachClient({
     startUpdate(async () => { await updateOutreachStatus(contactId, newStatus) })
   }
 
-  function handlePromote(contactId: string) {
-    if (!firstSalesStage) return
+  function handlePromote(contactId: string, status: string) {
+    const stage = targetStageFor(status, salesStages, firstSalesStage)
+    if (!stage) return
     setPromoted(prev => new Set([...prev, contactId]))
-    startUpdate(async () => { await promoteToPipeline(contactId, firstSalesStage.id) })
+    startUpdate(async () => { await promoteToPipeline(contactId, stage.id) })
   }
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
@@ -89,9 +103,9 @@ export function OutreachClient({
       <div className="grid grid-cols-4 gap-3">
         {[
           { label: 'Total', value: stats.total },
-          { label: 'Ligados', value: stats.ligado, accent: true },
-          { label: 'Reuniões', value: stats.reuniao, accent: true },
+          { label: 'Contactados', value: stats.contactado, accent: true },
           { label: 'Qualificados', value: stats.qualificado, highlight: true },
+          { label: 'Discovery calls', value: stats.discovery, accent: true },
         ].map(({ label, value, accent, highlight }) => (
           <div key={label} className="bg-muted/50 rounded-lg px-3 py-2.5">
             <div className="text-[11px] text-muted-foreground truncate">{label}</div>
@@ -206,7 +220,7 @@ function OutreachRow({
   contact: OutreachContact
   currentStatus: string
   onStatusChange: (id: string, s: string) => void
-  onPromote: (id: string) => void
+  onPromote: (id: string, status: string) => void
   canPromote: boolean
   pending: boolean
 }) {
@@ -307,12 +321,12 @@ function OutreachRow({
           <MessageCircle className="w-3.5 h-3.5" />
         </button>
 
-        {/* Promover */}
-        {currentStatus === 'qualificado' && canPromote && (
+        {/* Promover — oportunidade real entra no Pipeline na etapa correspondente */}
+        {PROMOTABLE.has(currentStatus) && canPromote && (
           <Button
             size="sm"
             variant="outline"
-            onClick={() => onPromote(contact.id)}
+            onClick={() => onPromote(contact.id, currentStatus)}
             disabled={pending}
             className="shrink-0 gap-1 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10 text-xs h-7"
           >
