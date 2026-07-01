@@ -7,85 +7,91 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Plus, Phone, AtSign, ArrowRight, ExternalLink, AlertCircle, MessageCircle, Copy, Check, RefreshCw, Sparkles } from 'lucide-react'
-import { createOutreachLead, updateOutreachStatus, promoteToPipeline } from '@/app/(app)/outreach/actions'
+import { Phone, AtSign, ExternalLink, Plus, MessageCircle, Copy, Check, RefreshCw, Sparkles } from 'lucide-react'
+import { createOutreachLead, setContactStage } from '@/app/(app)/outreach/actions'
 import { SOURCE_LABELS } from '@/lib/validations/contact'
 import type { Contact, PipelineStage } from '@/lib/types/database.types'
 import { cn } from '@/lib/utils'
 
-type OutreachContact = Pick<Contact, 'id' | 'full_name' | 'company' | 'phone' | 'instagram' | 'source' | 'notes' | 'outreach_status' | 'created_at'>
+type OutreachContact = Pick<Contact, 'id' | 'full_name' | 'company' | 'phone' | 'instagram' | 'source' | 'notes' | 'stage_id' | 'created_at'>
 
-// Estados de Outreach alinhados com as etapas do Pipeline (mesmo vocabulário).
-// Ordem = funil único focado em fechar: frio → contactado → qualificado → discovery call → entra no pipeline.
-const STATUSES: { value: string; label: string; color: string }[] = [
-  { value: 'a_contactar',    label: '🔵 A contactar',    color: 'bg-slate-100 text-slate-700 border-slate-200' },
-  { value: 'ligado',         label: '📞 Contactado',      color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { value: 'qualificado',    label: '✅ Qualificado',     color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-  { value: 'reuniao_marcada',label: '📅 Discovery call',  color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-  { value: 'sem_interesse',  label: '⚪ Sem interesse',   color: 'bg-gray-100 text-gray-500 border-gray-200' },
-]
-
-// Estados a partir dos quais o lead já é uma oportunidade real e pode entrar no pipeline.
-const PROMOTABLE = new Set(['qualificado', 'reuniao_marcada'])
-
-// Mapeia o estado de Outreach para a etapa de Pipeline correspondente (por nome),
-// para que ao promover o lead caia na etapa certa em vez de voltar sempre a "Lead".
-function targetStageFor(status: string, salesStages: PipelineStage[], fallback: PipelineStage | null): PipelineStage | null {
-  const byName = (kw: string) => salesStages.find(s => s.name.toLowerCase().includes(kw)) ?? null
-  if (status === 'reuniao_marcada') return byName('discovery') ?? byName('reuni') ?? fallback
-  if (status === 'qualificado')     return byName('qualific') ?? fallback
-  return fallback
+// Cor de cada etapa consoante o tipo (aberta / ganho / perdido).
+function stageChipColor(stage: PipelineStage, active: boolean): string {
+  if (!active) return 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground/50'
+  if (stage.is_won) return 'bg-emerald-100 text-emerald-700 border-emerald-200'
+  if (stage.is_lost) return 'bg-red-100 text-red-700 border-red-200'
+  return 'bg-blue-100 text-blue-700 border-blue-200'
 }
 
 export function OutreachClient({
   contacts,
   salesStages,
-  firstSalesStage,
 }: {
   contacts: OutreachContact[]
   salesStages: PipelineStage[]
-  firstSalesStage: PipelineStage | null
 }) {
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [creating, startCreate] = useTransition()
   const [pending, startUpdate] = useTransition()
-  const [localStatus, setLocalStatus] = useState<Record<string, string>>({})
-  const [promoted, setPromoted] = useState<Set<string>>(new Set())
+  const [localStage, setLocalStage] = useState<Record<string, string>>({})
 
-  const getStatus = (c: OutreachContact) => localStatus[c.id] ?? c.outreach_status ?? 'a_contactar'
+  const getStageId = (c: OutreachContact) => localStage[c.id] ?? c.stage_id ?? null
+  const stageById = useMemo(
+    () => new Map(salesStages.map(s => [s.id, s])),
+    [salesStages]
+  )
+  const isClosed = (stageId: string | null) => {
+    const s = stageId ? stageById.get(stageId) : null
+    return !!(s && (s.is_won || s.is_lost))
+  }
+
+  // Lista de trabalho do Outreach = leads de vendas ainda em aberto (não Ganho/Perdido).
+  const openContacts = useMemo(
+    () => contacts.filter(c => !isClosed(getStageId(c))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [contacts, localStage, stageById]
+  )
 
   const visible = useMemo(() =>
-    contacts
-      .filter(c => !promoted.has(c.id))
-      .filter(c => filter === 'all' || getStatus(c) === filter)
+    openContacts
+      .filter(c => filter === 'all' || (getStageId(c) ?? 'none') === filter)
       .filter(c => {
         const q = search.toLowerCase()
         return !q || c.full_name.toLowerCase().includes(q) || (c.company ?? '').toLowerCase().includes(q)
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [contacts, filter, search, localStatus, promoted]
+    [openContacts, filter, search, localStage]
   )
 
-  const stats = useMemo(() => ({
-    total: contacts.filter(c => !promoted.has(c.id)).length,
-    contactado: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'ligado').length,
-    qualificado: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'qualificado').length,
-    discovery: contacts.filter(c => !promoted.has(c.id) && getStatus(c) === 'reuniao_marcada').length,
-  }), [contacts, localStatus, promoted])
+  // Cartões de métricas: Total + etapas-chave que existam no funil.
+  const stats = useMemo(() => {
+    const countAt = (kw: string) => {
+      const st = salesStages.find(s => s.name.toLowerCase().includes(kw))
+      return st ? openContacts.filter(c => getStageId(c) === st.id).length : null
+    }
+    const cards: { label: string; value: number; accent?: boolean; highlight?: boolean }[] = [
+      { label: 'Em aberto', value: openContacts.length },
+    ]
+    const milestones = [
+      { label: 'Qualificados', kw: 'qualific', highlight: true },
+      { label: 'Discovery', kw: 'discovery', accent: true },
+      { label: 'Negociação', kw: 'negocia', accent: true },
+    ]
+    for (const m of milestones) {
+      const v = countAt(m.kw)
+      if (v !== null && cards.length < 4) cards.push({ label: m.label, value: v, accent: m.accent, highlight: m.highlight })
+    }
+    return cards
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openContacts, salesStages, localStage])
 
-  function handleStatusChange(contactId: string, newStatus: string) {
-    setLocalStatus(prev => ({ ...prev, [contactId]: newStatus }))
-    startUpdate(async () => { await updateOutreachStatus(contactId, newStatus) })
-  }
-
-  function handlePromote(contactId: string, status: string) {
-    const stage = targetStageFor(status, salesStages, firstSalesStage)
-    if (!stage) return
-    setPromoted(prev => new Set([...prev, contactId]))
-    startUpdate(async () => { await promoteToPipeline(contactId, stage.id) })
+  function handleStageChange(contact: OutreachContact, newStageId: string) {
+    const oldName = stageById.get(getStageId(contact) ?? '')?.name ?? 'Sem etapa'
+    const newName = stageById.get(newStageId)?.name ?? ''
+    setLocalStage(prev => ({ ...prev, [contact.id]: newStageId }))
+    startUpdate(async () => { await setContactStage(contact.id, newStageId, oldName, newName) })
   }
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
@@ -97,16 +103,13 @@ export function OutreachClient({
     })
   }
 
+  const total = openContacts.length
+
   return (
     <div className="space-y-4">
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3">
-        {[
-          { label: 'Total', value: stats.total },
-          { label: 'Contactados', value: stats.contactado, accent: true },
-          { label: 'Qualificados', value: stats.qualificado, highlight: true },
-          { label: 'Discovery calls', value: stats.discovery, accent: true },
-        ].map(({ label, value, accent, highlight }) => (
+        {stats.map(({ label, value, accent, highlight }) => (
           <div key={label} className="bg-muted/50 rounded-lg px-3 py-2.5">
             <div className="text-[11px] text-muted-foreground truncate">{label}</div>
             <div className={cn('text-2xl font-bold mt-0.5', highlight && 'text-emerald-500', accent && value > 0 && 'text-primary')}>
@@ -120,10 +123,10 @@ export function OutreachClient({
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Progresso da meta</span>
-          <span className="tabular-nums">{stats.total} / 20</span>
+          <span className="tabular-nums">{total} / 20</span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(100, (stats.total / 20) * 100)}%` }} />
+          <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(100, (total / 20) * 100)}%` }} />
         </div>
       </div>
 
@@ -133,12 +136,15 @@ export function OutreachClient({
           <Input placeholder="Pesquisar negócio..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select value={filter} onValueChange={v => setFilter(v ?? 'all')}>
-          <SelectTrigger className="sm:w-48">
-            <SelectValue placeholder="Todos os estados" />
+          <SelectTrigger className="sm:w-52">
+            <SelectValue placeholder="Todas as etapas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os estados</SelectItem>
-            {STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+            <SelectItem value="all">Todas as etapas</SelectItem>
+            <SelectItem value="none">Sem etapa</SelectItem>
+            {salesStages.filter(s => !s.is_won && !s.is_lost).map(s => (
+              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -199,10 +205,9 @@ export function OutreachClient({
             <OutreachRow
               key={contact.id}
               contact={contact}
-              currentStatus={getStatus(contact)}
-              onStatusChange={handleStatusChange}
-              onPromote={handlePromote}
-              canPromote={!!firstSalesStage}
+              stages={salesStages}
+              currentStageId={getStageId(contact)}
+              onStageChange={handleStageChange}
               pending={pending}
             />
           ))}
@@ -215,13 +220,12 @@ export function OutreachClient({
 }
 
 function OutreachRow({
-  contact, currentStatus, onStatusChange, onPromote, canPromote, pending,
+  contact, stages, currentStageId, onStageChange, pending,
 }: {
   contact: OutreachContact
-  currentStatus: string
-  onStatusChange: (id: string, s: string) => void
-  onPromote: (id: string, status: string) => void
-  canPromote: boolean
+  stages: PipelineStage[]
+  currentStageId: string | null
+  onStageChange: (contact: OutreachContact, stageId: string) => void
   pending: boolean
 }) {
   const [dmOpen, setDmOpen] = useState(false)
@@ -321,19 +325,6 @@ function OutreachRow({
           <MessageCircle className="w-3.5 h-3.5" />
         </button>
 
-        {/* Promover — oportunidade real entra no Pipeline na etapa correspondente */}
-        {PROMOTABLE.has(currentStatus) && canPromote && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onPromote(contact.id, currentStatus)}
-            disabled={pending}
-            className="shrink-0 gap-1 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10 text-xs h-7"
-          >
-            <ArrowRight className="w-3 h-3" />
-            Pipeline
-          </Button>
-        )}
         <Link href={`/contacts/${contact.id}`} className="text-muted-foreground/50 hover:text-muted-foreground shrink-0">
           <ExternalLink className="w-4 h-4" />
         </Link>
@@ -378,24 +369,27 @@ function OutreachRow({
         </div>
       )}
 
-      {/* Estado */}
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-muted-foreground shrink-0">Estado:</span>
+      {/* Etapa no funil — mesmas etapas do Pipeline */}
+      <div className="flex items-start gap-2">
+        <span className="text-[10px] text-muted-foreground shrink-0 mt-1">Etapa:</span>
         <div className="flex gap-1 flex-wrap">
-          {STATUSES.map(s => (
-            <button
-              key={s.value}
-              onClick={() => onStatusChange(contact.id, s.value)}
-              className={cn(
-                'text-[10px] font-medium px-2 py-0.5 rounded-full border transition-all',
-                currentStatus === s.value
-                  ? s.color + ' ring-1 ring-offset-1 ring-current'
-                  : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground/50'
-              )}
-            >
-              {s.label}
-            </button>
-          ))}
+          {stages.map(s => {
+            const active = currentStageId === s.id
+            return (
+              <button
+                key={s.id}
+                onClick={() => onStageChange(contact, s.id)}
+                disabled={pending}
+                className={cn(
+                  'text-[10px] font-medium px-2 py-0.5 rounded-full border transition-all disabled:opacity-60',
+                  stageChipColor(s, active),
+                  active && 'ring-1 ring-offset-1 ring-current'
+                )}
+              >
+                {s.name}
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>

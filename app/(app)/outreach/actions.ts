@@ -12,6 +12,18 @@ export async function createOutreachLead(formData: FormData) {
   const full_name = (formData.get('full_name') as string)?.trim()
   if (!full_name) return { error: 'Nome obrigatório.' }
 
+  // Novo lead entra logo na 1ª etapa do funil de vendas (mesmo funil do Pipeline).
+  const { data: firstStage } = await supabase
+    .from('pipeline_stages')
+    .select('id')
+    .eq('owner_id', user.id)
+    .eq('track', 'sales')
+    .eq('is_won', false)
+    .eq('is_lost', false)
+    .order('position')
+    .limit(1)
+    .maybeSingle()
+
   const { error } = await supabase.from('contacts').insert({
     owner_id: user.id,
     full_name,
@@ -21,42 +33,26 @@ export async function createOutreachLead(formData: FormData) {
     source: (formData.get('source') as string) || null,
     notes: (formData.get('notes') as string) || null,
     lead_type: 'pme',
-    outreach_status: 'a_contactar',
+    stage_id: firstStage?.id ?? null,
+    stage_changed_at: new Date().toISOString(),
     status: 'active',
   })
 
   if (error) return { error: 'Erro ao criar lead.' }
   revalidatePath('/outreach')
+  revalidatePath('/pipeline')
   return { success: true }
 }
 
-export async function updateOutreachStatus(contactId: string, newStatus: string) {
+// Move o lead para uma etapa do funil (mesma lógica do Pipeline) a partir do Outreach.
+export async function setContactStage(contactId: string, newStageId: string, oldStageName: string, newStageName: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   await supabase
     .from('contacts')
-    .update({ outreach_status: newStatus, updated_at: new Date().toISOString() })
-    .eq('id', contactId)
-    .eq('owner_id', user.id)
-
-  revalidatePath('/outreach')
-}
-
-export async function promoteToPipeline(contactId: string, stageId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  await supabase
-    .from('contacts')
-    .update({
-      stage_id: stageId,
-      outreach_status: null,
-      stage_changed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
+    .update({ stage_id: newStageId, stage_changed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('id', contactId)
     .eq('owner_id', user.id)
 
@@ -64,7 +60,7 @@ export async function promoteToPipeline(contactId: string, stageId: string) {
     owner_id: user.id,
     contact_id: contactId,
     type: 'stage_change',
-    content: 'Promovido do Outreach para o Pipeline',
+    content: `Movido de "${oldStageName}" para "${newStageName}"`,
   })
 
   revalidatePath('/outreach')
