@@ -34,6 +34,9 @@ export function ParticlesBackground({
     let particles: Particle[] = []
     let raf = 0
     const LINK_DIST = 116
+    const MOUSE_RADIUS = 130 // raio de influência do cursor
+    let mouseX = -9999
+    let mouseY = -9999
 
     function seed() {
       const count = Math.round(width * height * density)
@@ -71,6 +74,17 @@ export function ParticlesBackground({
           p.y += p.vy
           if (p.x < 0 || p.x > width) p.vx *= -1
           if (p.y < 0 || p.y > height) p.vy *= -1
+
+          // Repulsão suave ao cursor: dentro do raio, empurra a partícula
+          // para fora, criando uma "cavidade" à volta do rato.
+          const mdx = p.x - mouseX
+          const mdy = p.y - mouseY
+          const mdist = Math.hypot(mdx, mdy)
+          if (mdist < MOUSE_RADIUS && mdist > 0) {
+            const force = (1 - mdist / MOUSE_RADIUS) * 2.4
+            p.x += (mdx / mdist) * force
+            p.y += (mdy / mdist) * force
+          }
         }
       }
 
@@ -117,9 +131,26 @@ export function ParticlesBackground({
     }
     window.addEventListener('resize', onResize)
 
+    // Interação com o rato (o canvas tem pointer-events-none, por isso ouvimos
+    // no window; clientX/Y coincidem com o viewport = canvas fixed inset-0).
+    const onMouseMove = (e: MouseEvent) => {
+      mouseX = e.clientX
+      mouseY = e.clientY
+    }
+    const onMouseLeave = () => {
+      mouseX = -9999
+      mouseY = -9999
+    }
+    if (!reduceMotion) {
+      window.addEventListener('mousemove', onMouseMove, { passive: true })
+      document.addEventListener('mouseleave', onMouseLeave)
+    }
+
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
+      window.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseleave', onMouseLeave)
     }
   }, [density, color])
 
