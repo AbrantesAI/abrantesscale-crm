@@ -120,7 +120,7 @@ export function ParticlesBackground({
     <canvas
       ref={canvasRef}
       aria-hidden
-      className={cn('pointer-events-none absolute inset-0', className)}
+      className={cn('pointer-events-none absolute inset-0 block bg-transparent', className)}
     />
   )
 }
