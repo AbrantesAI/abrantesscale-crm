@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 import { cn } from '@/lib/utils'
+import { ThemeToggle } from '@/components/shared/theme-toggle'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
@@ -66,8 +67,9 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Logout */}
-        <div className="flex flex-col items-center px-2 pb-3 pt-2 border-t border-sidebar-border shrink-0">
+        {/* Tema + Logout */}
+        <div className="flex flex-col items-center gap-0.5 px-2 pb-3 pt-2 border-t border-sidebar-border shrink-0">
+          <ThemeToggle />
           <form action={logout} className="w-full">
             <button
               type="submit"
@@ -100,6 +102,7 @@ export function Sidebar() {
               </Link>
             )
           })}
+          <ThemeToggle className="shrink-0 snap-start px-2.5 py-1.5 rounded-lg" />
           <form action={logout} className="shrink-0 snap-start">
             <button
               type="submit"

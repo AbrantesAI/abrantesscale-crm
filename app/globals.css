@@ -149,26 +149,29 @@
   --sidebar-ring: oklch(0.65 0.22 245 / 50%);
 }
 
-/* ─── Caixas (cards) com fundo branco suave ───
-   Escopo só ao interior das caixas: remapeia os tokens de superfície para uma
-   paleta clara. Assim tudo lá dentro (texto, linhas, barras, badges, divisores)
-   adapta-se automaticamente, sem tocar no fundo escuro da app nem na sidebar.
-   Branco "não muito intenso": off-white com leve tom frio. */
-[data-slot="card"] {
-  --card: oklch(0.955 0.006 250);
-  --card-foreground: oklch(0.26 0.03 255);
-  --background: oklch(0.985 0.004 250);
-  --foreground: oklch(0.26 0.03 255);
-  --muted: oklch(0.915 0.008 250);
-  --muted-foreground: oklch(0.48 0.03 255);
-  --secondary: oklch(0.93 0.01 250);
-  --secondary-foreground: oklch(0.3 0.03 255);
-  --accent: oklch(0.9 0.02 250);
-  --accent-foreground: oklch(0.32 0.04 255);
-  --border: oklch(0.87 0.012 255);
-  --input: oklch(0.9 0.012 255);
-  --popover: oklch(0.985 0.004 250);
-  --popover-foreground: oklch(0.26 0.03 255);
+/* ─── Modo Dia: caixas (cards) com fundo branco suave e translúcido ───
+   Só ativo com a classe .day no <html> (togglada pelo ThemeToggle).
+   Sem .day = Modo Noite = caixas escuras (a versão original).
+   Escopo ao interior das caixas: remapeia os tokens de superfície para uma
+   paleta clara. Branco "menos forte" + 50% de transparência, com frosted blur
+   para manter a legibilidade sobre o fundo escuro/partículas. */
+.day [data-slot="card"] {
+  --card: oklch(0.9 0.012 250 / 50%);
+  --card-foreground: oklch(0.22 0.03 258);
+  --background: oklch(0.94 0.008 250 / 55%);
+  --foreground: oklch(0.22 0.03 258);
+  --muted: oklch(0.7 0.02 255 / 30%);
+  --muted-foreground: oklch(0.34 0.03 258);
+  --secondary: oklch(0.85 0.015 250 / 55%);
+  --secondary-foreground: oklch(0.26 0.03 258);
+  --accent: oklch(0.8 0.03 250 / 55%);
+  --accent-foreground: oklch(0.28 0.04 258);
+  --border: oklch(0.35 0.03 258 / 22%);
+  --input: oklch(0.85 0.015 258 / 55%);
+  --popover: oklch(0.96 0.006 250);
+  --popover-foreground: oklch(0.22 0.03 258);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
 }
 
 @layer base {

@@ -32,6 +32,15 @@ export default function RootLayout({
       lang="pt"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Aplica o tema (dia/noite) antes do paint para evitar flash. Default: dia. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('theme');if(t==='night'){document.documentElement.classList.remove('day')}else{document.documentElement.classList.add('day')}}catch(e){document.documentElement.classList.add('day')}})()",
+          }}
+        />
+      </head>
       <body className="min-h-full">{children}</body>
     </html>
   );
