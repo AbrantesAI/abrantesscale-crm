@@ -152,10 +152,13 @@
 /* ─── Modo Dia: caixas (cards) com fundo branco suave e translúcido ───
    Só ativo com a classe .day no <html> (togglada pelo ThemeToggle).
    Sem .day = Modo Noite = caixas escuras (a versão original).
-   Escopo ao interior das caixas: remapeia os tokens de superfície para uma
-   paleta clara. Branco "menos forte" + 50% de transparência, com frosted blur
-   para manter a legibilidade sobre o fundo escuro/partículas. */
-.day [data-slot="card"] {
+   Escopo às caixas (componente Card = [data-slot=card]; ou divs com .bg-card
+   noutras páginas — Pipeline, ICP, Tarefas, Receita, etc.): remapeia os tokens
+   de superfície para uma paleta clara. Os descendentes herdam automaticamente,
+   por isso tudo lá dentro adapta-se; o texto FORA das caixas fica claro sobre o
+   fundo escuro. Branco "menos forte" + transparência, com frosted blur. */
+.day [data-slot="card"],
+.day .bg-card {
   --card: oklch(0.9 0.012 250 / 65%);
   --card-foreground: oklch(0.22 0.03 258);
   --background: oklch(0.94 0.008 250 / 65%);

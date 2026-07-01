@@ -122,7 +122,7 @@ export function PipelineFunnel({ stages, contacts }: Props) {
       {/* Funil + painel de contactos */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
         {/* Cone — centra-se e cabe todo; só faz scroll em ecrãs muito baixos */}
-        <div className="lg:flex-1 min-h-0 rounded-2xl border border-primary/10 bg-[#0a1120]/40 backdrop-blur-[1px] px-3 sm:px-6 py-4 flex flex-col overflow-y-auto">
+        <div data-slot="card" className="lg:flex-1 min-h-0 rounded-2xl border border-primary/10 bg-card/40 backdrop-blur-[1px] px-3 sm:px-6 py-4 flex flex-col overflow-y-auto">
           <div className="m-auto w-full flex flex-col gap-1">
           {filteredStages.length === 0 ? (
             <div className="flex items-center justify-center text-muted-foreground text-sm py-12 text-center">
@@ -144,7 +144,7 @@ export function PipelineFunnel({ stages, contacts }: Props) {
               return (
                 <div key={stage.id}>
                   {dropoff !== null && (
-                    <div className="flex items-center justify-center gap-1 text-[10px] text-white/35 leading-none py-px">
+                    <div className="flex items-center justify-center gap-1 text-[10px] text-foreground/35 leading-none py-px">
                       <ArrowDown className="w-2.5 h-2.5" />
                       {dropoff}%
                     </div>
@@ -155,7 +155,7 @@ export function PipelineFunnel({ stages, contacts }: Props) {
                     className="w-full flex items-center gap-2 sm:gap-3 group"
                     title={`${stage.name} · ${count} lead${count !== 1 ? 's' : ''}`}
                   >
-                    <div className="w-16 sm:w-28 shrink-0 text-right text-[11px] sm:text-sm font-medium truncate text-white/85">
+                    <div className="w-16 sm:w-28 shrink-0 text-right text-[11px] sm:text-sm font-medium truncate text-foreground/85">
                       {stage.name}
                     </div>
 
@@ -186,10 +186,10 @@ export function PipelineFunnel({ stages, contacts }: Props) {
                     </div>
 
                     <div className="w-[70px] sm:w-24 shrink-0 text-left">
-                      <div className="text-[10px] sm:text-xs text-white/85 truncate">
+                      <div className="text-[10px] sm:text-xs text-foreground/85 truncate">
                         {totalValue > 0 ? eur(totalValue) : '—'}
                       </div>
-                      <div className="text-[9px] sm:text-[11px] text-white/40">
+                      <div className="text-[9px] sm:text-[11px] text-foreground/40">
                         {Math.round(normalizeProb(stage.win_prob) * 100)}% prob.
                       </div>
                     </div>
@@ -202,20 +202,20 @@ export function PipelineFunnel({ stages, contacts }: Props) {
         </div>
 
         {/* Painel de contactos da etapa selecionada */}
-        <div className="lg:w-80 xl:w-96 shrink-0 min-h-0 rounded-2xl border border-primary/10 bg-[#0a1120]/40 backdrop-blur-[1px] flex flex-col">
+        <div data-slot="card" className="lg:w-80 xl:w-96 shrink-0 min-h-0 rounded-2xl border border-primary/10 bg-card/40 backdrop-blur-[1px] flex flex-col">
           {selectedStage ? (
             <>
-              <div className="px-3.5 py-3 border-b border-white/10">
+              <div className="px-3.5 py-3 border-b border-border">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-white/90 truncate">{selectedStage.name}</h3>
-                  <span className="text-xs text-white/50 shrink-0">
+                  <h3 className="text-sm font-semibold text-foreground/90 truncate">{selectedStage.name}</h3>
+                  <span className="text-xs text-foreground/50 shrink-0">
                     {selectedContacts.length} lead{selectedContacts.length !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto p-2.5 flex flex-col gap-1.5">
                 {selectedContacts.length === 0 ? (
-                  <p className="text-xs text-white/45 py-6 text-center">Sem contactos nesta etapa.</p>
+                  <p className="text-xs text-foreground/45 py-6 text-center">Sem contactos nesta etapa.</p>
                 ) : (
                   selectedContacts.map((c) => (
                     <FunnelContactRow
@@ -234,8 +234,8 @@ export function PipelineFunnel({ stages, contacts }: Props) {
               <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
                 <ChevronDown className="w-5 h-5 text-primary" />
               </div>
-              <p className="text-sm text-white/60">Seleciona uma etapa</p>
-              <p className="text-xs text-white/40">Toca num segmento do funil para ver e mover os contactos dessa etapa.</p>
+              <p className="text-sm text-foreground/60">Seleciona uma etapa</p>
+              <p className="text-xs text-foreground/40">Toca num segmento do funil para ver e mover os contactos dessa etapa.</p>
             </div>
           )}
         </div>
